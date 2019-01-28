@@ -1,0 +1,32 @@
+{
+  "name": "seacommerce/mapper",
+  "type": "library",
+  "description": "Library for mapping data between types.",
+  "keywords": [
+    "seacommerce"
+  ],
+  "homepage": "https://seacommerce.nl",
+  "license": "Seacommerce Private",
+  "authors": [
+    {
+      "name": "Sil Moelker",
+      "email": "sil@seacommerce.nl"
+    },
+    {
+      "name": "Seacommerce",
+      "homepage": "https://seacommerce.nl",
+      "email": "info@seacommerce.nl"
+    }
+  ],
+  "require": {
+    "symfony/property-info": "^4.2",
+    "phpdocumentor/reflection-docblock": "^4.3"
+  },
+  "require-dev": {
+  },
+  "autoload": {
+    "psr-4": {
+      "Seacommerce\\Mapper\\": "./src/"
+    }
+  }
+}
