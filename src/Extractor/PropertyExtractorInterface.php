@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Seacommerce\Mapper;
+namespace Seacommerce\Mapper\Extractor;
 
 
 interface PropertyExtractorInterface

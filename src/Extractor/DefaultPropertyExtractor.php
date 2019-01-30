@@ -1,6 +1,6 @@
 <?php
 
-namespace Seacommerce\Mapper;
+namespace Seacommerce\Mapper\Extractor;
 
 use Symfony\Component\PropertyInfo\Extractor\PhpDocExtractor;
 use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
@@ -26,6 +26,7 @@ class DefaultPropertyExtractor implements PropertyExtractorInterface
 
     public function getProperties(string $class): array
     {
-        return $this->propertyInfoExtractor->getProperties($class);
+        $properties = $this->propertyInfoExtractor->getProperties($class);
+        return $properties;
     }
 }

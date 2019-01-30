@@ -3,45 +3,62 @@
 
 namespace Seacommerce\Mapper;
 
+use Seacommerce\Mapper\Exception\DuplicateConfigurationException;
+use Seacommerce\Mapper\Exception\ValidationErrorsException;
 
 class Registry implements RegistryInterface
 {
-    /** @var array */
+    /** @var ConfigurationInterface[] */
     private $registry = [];
 
     /**
      * @param string $source
-     * @param string $dest
-     * @return MappingInterface
+     * @param string $target
+     * @return ConfigurationInterface
      * @throws \Exception
      */
-    public function register(string $source, string $dest): MappingInterface
+    public function add(string $source, string $target): ConfigurationInterface
     {
-        $key = $this->getKey($source, $dest);
+        $key = $this->getConfigurationKey($source, $target);
         if (isset($this->registry[$key])) {
-            // TODO: Specific exception
-            throw new \Exception("Mapping from '$source' to '$dest' already exists.");
+            throw new DuplicateConfigurationException($source, $target);
         }
-        $m = new Mapping($source, $dest);
+        $m = new Configuration($source, $target);
         $this->registry[$key] = $m;
         return $m;
     }
 
-    public function has(string $source, string $dest): bool
+    public function has(string $source, string $target): bool
     {
-        $key = $this->getKey($source, $dest);
+        $key = $this->getConfigurationKey($source, $target);
         return isset($this->registry[$key]);
     }
 
-    public function get(string $source, string $dest): ?MappingInterface
+    public function get(string $source, string $dest): ?ConfigurationInterface
     {
-        $key = $this->getKey($source, $dest);
+        $key = $this->getConfigurationKey($source, $dest);
         return isset($this->registry[$key]) ? $this->registry[$key] : null;
     }
 
-    private function getKey(string $source, string $dest): string
+    /**
+     * @param bool $throw
+     * @return array
+     * @throws ValidationErrorsException
+     */
+    public function validate(bool $throw = true): array
     {
-        $key = $source . '_' . $dest;
-        return $key;
+        $errors = [];
+        foreach ($this->registry as $key => $config) {
+            $errors = array_merge($errors, $config->validate(false));
+        }
+        if ($throw && !empty($errors)) {
+            throw new ValidationErrorsException($errors);
+        }
+        return $errors;
+    }
+
+    private function getConfigurationKey(string $sourceClass, string $targetClass): string
+    {
+        return "$sourceClass=>$targetClass";
     }
 }

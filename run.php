@@ -1,7 +1,14 @@
 <?php
 
+namespace Test\Run;
+
+use DateTime;
+use Seacommerce\Mapper\Compiler\PropertyAccessCompiler;
 use Seacommerce\Mapper\Context;
-use Seacommerce\Mapper\Operations\Ignore;
+use Seacommerce\Mapper\Mapper;
+use Seacommerce\Mapper\MapperInterface;
+use Seacommerce\Mapper\Operation\ConstValueOperation;
+use Seacommerce\Mapper\Registry;
 
 require_once './vendor/autoload.php';
 
@@ -89,6 +96,9 @@ class Target
     /** @var string|null */
     public $nono;
 
+    /** @var int|null */
+    public $fixed;
+
     /**
      * @return int
      */
@@ -152,6 +162,24 @@ class Target
     {
         $this->nono = $nono;
     }
+
+    /**
+     * @return int|null
+     */
+    public function getFixed(): ?int
+    {
+        return $this->fixed;
+    }
+
+    /**
+     * @param int|null $fixed
+     * @return Target
+     */
+    public function setFixed(?int $fixed): Target
+    {
+        $this->fixed = $fixed;
+        return $this;
+    }
 }
 
 $source = new Source();
@@ -162,8 +190,23 @@ $source->setDate(new DateTime());
 $target = new Target();
 $target->nono = 'aap nono';
 
-$registry = new \Seacommerce\Mapper\Registry();
-$registry->register(Source::class, Target::class)
-    ->forMember('nono', Ignore::class);
+$registry = new Registry();
+$registry->add(Source::class, Target::class)
+    ->automap()
+    ->map(['name' => 'name'])
+    ->map(['date' => 'date'])
+    ->callback('id', function (string $property, ?Source $source, Target $target, MapperInterface $mapper, Context $context) {
+        return 2;
+    })
+    ->ignore('nono')
+    ->custom('fixed', new ConstValueOperation(1));
 
-//print_r($target);
+$registry->validate();
+
+$mapper = new Mapper($registry, new PropertyAccessCompiler('./var/cache'));
+
+foreach (range(0, 5000) as $i) {
+    $target = $mapper->map($source, Target::class);
+}
+
+print_r($target);
