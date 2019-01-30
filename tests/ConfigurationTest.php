@@ -20,7 +20,8 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
             })
             ->constValue('fixed', 100);
 
-        $registry->validate();
+        $errors = $registry->validate(false);
+        $this->assertEmpty($errors);
     }
 
     public function testGettersSetters()
@@ -35,7 +36,8 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
             })
             ->constValue('fixed', 100);
 
-        $registry->validate();
+        $errors = $registry->validate(false);
+        $this->assertEmpty($errors);
     }
 
     public function testEmptyConfiguration()
@@ -71,5 +73,8 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
             ->automap()
             ->ignore('dateTime', 'fixed', 'ignore');
         $registry->validate();
+
+        $errors = $registry->validate(false);
+        $this->assertEmpty($errors);
     }
 }

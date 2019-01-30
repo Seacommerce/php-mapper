@@ -4,7 +4,6 @@
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
          backupGlobals="false"
          colors="true"
-         beStrictAboutTestsThatDoNotTestAnything="false"
          bootstrap="./tests/bootstrap.php">
     <testsuites>
         <testsuite name="Seacommerce Mapper Suite">
