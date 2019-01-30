@@ -5,6 +5,12 @@
 A mapper for PHP to map data between types that's optimized for
 performance and validation.
 
+
+## Installation
+```bash
+composer require seacommerce/mapper
+```
+
 ## Features
 - Mapping from type to type.
 - Automapping of matching properties, custom from->to, custom callbacks.
