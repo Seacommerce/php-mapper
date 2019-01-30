@@ -6,11 +6,15 @@
     "seacommerce"
   ],
   "homepage": "https://seacommerce.nl",
-  "license": "Seacommerce Private",
+  "license": "MIT",
   "authors": [
     {
       "name": "Sil Moelker",
       "email": "sil@seacommerce.nl"
+    },
+    {
+      "name": "Niels Steenbakker",
+      "email": "niels@seacommerce.nl"
     },
     {
       "name": "Seacommerce",

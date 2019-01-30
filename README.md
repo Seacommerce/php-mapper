@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/Seacommerce/php-mapper.svg?branch=master)](https://travis-ci.org/Seacommerce/php-mapper)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 # Seacommerce Mapper
-
 A mapper for PHP to map data between types that's optimized for
 performance and validation.
 
