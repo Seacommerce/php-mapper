@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/Seacommerce/php-mapper.svg?branch=master)](https://travis-ci.org/Seacommerce/php-mapper)
+
 # Seacommerce Mapper
 
 A mapper for PHP to map data between types that's optimized for
