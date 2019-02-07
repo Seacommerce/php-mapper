@@ -37,6 +37,24 @@ class MapperTest extends \PHPUnit\Framework\TestCase
         $mapper->map(new Model\PublicFields\Source(), 'NonExistingClass');
     }
 
+    public function testCompile()
+    {
+        $registry = new Registry();
+        $registry->add(Model\PublicFields\Source::class, Model\PublicFields\Target::class)
+            ->automap()
+            ->ignore('ignore', 'dateTime',  'callback', 'fixed');
+
+        $mapper = new Mapper($registry, new PropertyAccessCompiler('./var/cache'));
+        $mapper->compile();
+
+        foreach ($mapper->getRegistry() as $configuration) {
+            $className = $mapper->getCompiler()->getMappingFullClassName($configuration);
+            echo $className . PHP_EOL;
+            $exists = class_exists($className, false);
+            $this->assertTrue($exists);
+        }
+    }
+
 
     /**
      * @throws ClassNotFoundException

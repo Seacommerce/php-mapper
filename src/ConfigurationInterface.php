@@ -16,6 +16,11 @@ interface ConfigurationInterface
      */
     public function getTargetClass(): string;
 
+    /**
+     * @return string
+     */
+    public function getScope(): string;
+
     public function automap(): ConfigurationInterface;
 
     public function ignore(string ... $property): ConfigurationInterface;

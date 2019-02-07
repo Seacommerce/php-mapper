@@ -144,7 +144,7 @@ class PropertyAccessCompiler implements CompilerInterface
     {
         $sourceClass = preg_replace('/\\\\{1}/', '_', $configuration->getSourceClass());
         $destClass = preg_replace('/\\\\{1}/', '_', $configuration->getTargetClass());
-        $name = "{$sourceClass}_to_{$destClass}";
+        $name = "__{$configuration->getScope()}_{$sourceClass}_to_{$destClass}";
         return $name;
     }
 

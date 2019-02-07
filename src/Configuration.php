@@ -18,6 +18,9 @@ class Configuration implements ConfigurationInterface
     /*** @var string */
     private $targetClass;
 
+    /*** @var string */
+    private $scope;
+
     /** @var array */
     private $sourceProperties = [];
     /** @var array */
@@ -26,10 +29,11 @@ class Configuration implements ConfigurationInterface
     /** @var array */
     private $operations = [];
 
-    public function __construct(string $sourceClass, string $targetClass)
+    public function __construct(string $sourceClass, string $targetClass, string $scope)
     {
         $this->sourceClass = $sourceClass;
         $this->targetClass = $targetClass;
+        $this->scope = $scope;
         $this->extractProperties();
     }
 
@@ -47,6 +51,14 @@ class Configuration implements ConfigurationInterface
     public function getTargetClass(): string
     {
         return $this->targetClass;
+    }
+
+    /**
+     * @return string
+     */
+    public function getScope(): string
+    {
+        return $this->scope;
     }
 
     public function automap(): ConfigurationInterface

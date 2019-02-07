@@ -8,8 +8,21 @@ use Seacommerce\Mapper\Exception\ValidationErrorsException;
 
 class Registry implements RegistryInterface
 {
+    /** @var string */
+    private $scope;
+
     /** @var ConfigurationInterface[] */
     private $registry = [];
+
+    /**
+     * Registry constructor.
+     * @param string|null $scope
+     * @throws \Exception
+     */
+    public function __construct(?string $scope = null)
+    {
+        $this->scope = $scope ?? strtoupper(bin2hex(random_bytes(6)));
+    }
 
     /**
      * @param string $source
@@ -23,7 +36,7 @@ class Registry implements RegistryInterface
         if (isset($this->registry[$key])) {
             throw new DuplicateConfigurationException($source, $target);
         }
-        $m = new Configuration($source, $target);
+        $m = new Configuration($source, $target, $this->scope);
         $this->registry[$key] = $m;
         return $m;
     }
@@ -55,6 +68,14 @@ class Registry implements RegistryInterface
             throw new ValidationErrorsException($errors);
         }
         return $errors;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getIterator()
+    {
+        return new \ArrayIterator($this->registry);
     }
 
     private function getConfigurationKey(string $sourceClass, string $targetClass): string

@@ -4,6 +4,7 @@
 namespace Seacommerce\Mapper;
 
 
+use Seacommerce\Mapper\Compiler\CompilerInterface;
 use Seacommerce\Mapper\Compiler\PropertyAccessCompiler;
 use Seacommerce\Mapper\Exception\ClassNotFoundException;
 use Seacommerce\Mapper\Exception\ConfigurationNotFoundException;
@@ -14,19 +15,42 @@ class Mapper implements MapperInterface
     /** @var Registry */
     private $registry;
     /**
-     * @var PropertyAccessCompiler
+     * @var CompilerInterface
      */
     private $compiler;
 
     /**
      * Mapper constructor.
      * @param Registry $registry
-     * @param PropertyAccessCompiler $compiler
+     * @param CompilerInterface $compiler
      */
-    public function __construct(Registry $registry, PropertyAccessCompiler $compiler)
+    public function __construct(Registry $registry, CompilerInterface $compiler)
     {
         $this->registry = $registry;
         $this->compiler = $compiler;
+    }
+
+    /**
+     * @return Registry
+     */
+    public function getRegistry(): Registry
+    {
+        return $this->registry;
+    }
+
+    /**
+     * @return CompilerInterface
+     */
+    public function getCompiler(): CompilerInterface
+    {
+        return $this->compiler;
+    }
+
+    public function compile(): void
+    {
+        foreach ($this->registry as $configuration) {
+            $this->compileConfiguration($configuration);
+        }
     }
 
     /**
@@ -53,12 +77,8 @@ class Mapper implements MapperInterface
         if (empty($configuration)) {
             throw new ConfigurationNotFoundException($sourceClass, $targetClass);
         }
-
-        $mappingClassName = $this->compiler->getMappingFullClassName($configuration);
-        if (!class_exists($mappingClassName, false)) {
-            $this->compiler->compile($configuration);
-        }
-        $mapping = new $mappingClassName;
+        $className = $this->compileConfiguration($configuration);
+        $mapping = new $className;
         $context = new Context($this->registry, $configuration, $bag ?? []);
         return $mapping->map($source, $target, $this, $context);
     }
@@ -78,6 +98,15 @@ class Mapper implements MapperInterface
             $list[] = $this->map($s, $target, $bag);
         }
         return $list;
+    }
+
+    private function compileConfiguration(ConfigurationInterface $configuration): string
+    {
+        $mappingClassName = $this->compiler->getMappingFullClassName($configuration);
+        if (!class_exists($mappingClassName, false)) {
+            $this->compiler->compile($configuration);
+        }
+        return $mappingClassName;
     }
 
     /**
