@@ -183,11 +183,11 @@ class Configuration implements ConfigurationInterface
         $s = $extractor->getProperties($this->sourceClass);
         $t = $extractor->getProperties($this->targetClass);
         if (empty($s)) {
-            throw new PropertyNotFoundException($this->sourceClass, []);
+            throw new PropertyNotFoundException('*any*', []);
         }
 
         if (empty($t)) {
-            throw new PropertyNotFoundException($this->targetClass, []);
+            throw new PropertyNotFoundException('*any*', []);
         }
 
         $this->sourceProperties = array_flip($s);

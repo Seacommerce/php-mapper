@@ -16,15 +16,15 @@ class PropertyNotFoundException extends \Exception
 
     /**
      * PropertyNotFoundException constructor.
-     * @param string $sourceClass
+     * @param string $property
      * @param string[] $existing
      */
-    public function __construct(string $sourceClass, array $existing)
+    public function __construct(string $property, array $existing)
     {
-        $this->property = $sourceClass;
+        $this->property = $property;
         $this->existing = $existing;
         $properties = join(', ', $existing);
-        parent::__construct("Property '{$sourceClass}' does not exist. Available members: {$properties}.", 0, null);
+        parent::__construct("Property '{$property}' does not exist. Available members: {$properties}.", 0, null);
     }
 
     /**
