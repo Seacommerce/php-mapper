@@ -1,11 +1,8 @@
 <?php
 
-
 namespace Seacommerce\Mapper;
 
-
 use Seacommerce\Mapper\Compiler\CompilerInterface;
-use Seacommerce\Mapper\Compiler\PropertyAccessCompiler;
 use Seacommerce\Mapper\Exception\ClassNotFoundException;
 use Seacommerce\Mapper\Exception\ConfigurationNotFoundException;
 use Seacommerce\Mapper\Exception\InvalidArgumentException;

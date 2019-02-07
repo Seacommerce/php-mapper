@@ -8,6 +8,11 @@ use IteratorAggregate;
 interface RegistryInterface extends IteratorAggregate
 {
     /**
+     * @return string
+     */
+    public function getScope(): string;
+
+    /**
      * @param string $source
      * @param string $target
      * @return ConfigurationInterface

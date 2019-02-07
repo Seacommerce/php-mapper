@@ -25,6 +25,15 @@ class Registry implements RegistryInterface
     }
 
     /**
+     * @return string
+     */
+    public function getScope(): string
+    {
+        return $this->scope;
+    }
+
+
+    /**
      * @param string $source
      * @param string $target
      * @return ConfigurationInterface
