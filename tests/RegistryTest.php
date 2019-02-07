@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Seacommerce\Mapper\Test;
 
-use Seacommerce\Mapper\Exception\ConfigurationNotFoundException;
 use Seacommerce\Mapper\Exception\DuplicateConfigurationException;
 use Seacommerce\Mapper\Registry;
 
@@ -11,7 +10,9 @@ class RegistryTest extends \PHPUnit\Framework\TestCase
 {
     public function testInitialization()
     {
-        $registry = new Registry();
+        $registry = new Registry('reg');
+
+        $this->assertEquals('reg', $registry->getScope());
 
         $has = $registry->has(Model\PublicFields\Source::class, Model\PublicFields\Target::class);
         $this->assertFalse($has);

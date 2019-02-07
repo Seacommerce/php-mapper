@@ -3,41 +3,36 @@ declare(strict_types=1);
 
 namespace Seacommerce\Mapper\Test;
 
+use Seacommerce\Mapper\Configuration;
 use Seacommerce\Mapper\Exception\PropertyNotFoundException;
 use Seacommerce\Mapper\Exception\ValidationErrorsException;
-use Seacommerce\Mapper\Registry;
 
 class ConfigurationTest extends \PHPUnit\Framework\TestCase
 {
     public function testPublicFields()
     {
-        $registry = new Registry();
-        $registry->add(Model\PublicFields\Source::class, Model\PublicFields\Target::class)
+        $errors = (new Configuration(Model\PublicFields\Source::class, Model\PublicFields\Target::class, 'X'))
             ->automap()
             ->ignore('ignore')
             ->map(['dateTime' => 'date'])
             ->callback('callback', function () {
                 return 'x';
             })
-            ->constValue('fixed', 100);
-
-        $errors = $registry->validate(false);
+            ->constValue('fixed', 100)->validate(false);
         $this->assertEmpty($errors);
     }
 
     public function testGettersSetters()
     {
-        $registry = new Registry();
-        $registry->add(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class)
+        $errors = (new Configuration(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class, 'X'))
             ->automap()
             ->ignore('ignore')
             ->map(['dateTime' => 'date'])
             ->callback('callback', function () {
                 return 'x';
             })
-            ->constValue('fixed', 100);
-
-        $errors = $registry->validate(false);
+            ->constValue('fixed', 100)
+            ->validate(false);
         $this->assertEmpty($errors);
     }
 
@@ -50,9 +45,8 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
         $this->expectExceptionMessageRegExp("/Missing mapping for property 'fixed'/");
         $this->expectExceptionMessageRegExp("/Missing mapping for property 'callback'/");
         $this->expectExceptionMessageRegExp("/Missing mapping for property 'ignore'/");
-        $registry = new Registry();
-        $registry->add(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class);
-        $registry->validate();
+        (new Configuration(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class, 'X'))
+            ->validate();
     }
 
     public function testAutoMap()
@@ -61,45 +55,49 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
         $this->expectExceptionMessageRegExp("/Missing mapping for property 'dateTime'/");
         $this->expectExceptionMessageRegExp("/Missing mapping for property 'fixed'/");
         $this->expectExceptionMessageRegExp("/Missing mapping for property 'ignore'/");
-        $registry = new Registry();
-        $registry->add(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class)
-            ->automap();
-        $registry->validate();
+        (new Configuration(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class, 'X'))
+            ->automap()->validate();
     }
 
     public function testIgnoredFields()
     {
-        $registry = new Registry();
-        $registry->add(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class)
+        $errors = (new Configuration(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class, 'X'))
             ->automap()
-            ->ignore('dateTime', 'fixed', 'ignore');
-        $registry->validate();
+            ->ignore('dateTime', 'fixed', 'ignore')->validate();
 
-        $errors = $registry->validate(false);
         $this->assertEmpty($errors);
     }
 
     public function testIgnorePropertyNotFound()
     {
         $this->expectException(PropertyNotFoundException::class);
-        $registry = new Registry();
-        $registry->add(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class)
+        (new Configuration(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class, 'X'))
             ->ignore('nonExisting');
     }
 
     public function testMapSourcePropertyNotFound()
     {
         $this->expectException(PropertyNotFoundException::class);
-        $registry = new Registry();
-        $registry->add(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class)
+        (new Configuration(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class, 'X'))
             ->map(['dateTime' => 'nonExisting']);
     }
 
     public function testMapTargetPropertyNotFound()
     {
         $this->expectException(PropertyNotFoundException::class);
-        $registry = new Registry();
-        $registry->add(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class)
+        (new Configuration(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class, 'X'))
             ->map(['nonExisting' => 'date']);
+    }
+
+    public function testPropertyLessSourceClassShouldThrowException()
+    {
+        $this->expectException(PropertyNotFoundException::class);
+        new Configuration(Model\None\Source::class, Model\GettersSetters\Target::class, 'X');
+    }
+
+    public function testPropertyLessTargetClassShouldThrowException()
+    {
+        $this->expectException(PropertyNotFoundException::class);
+        new Configuration(Model\GettersSetters\Source::class, Model\None\Target::class, 'X');
     }
 }

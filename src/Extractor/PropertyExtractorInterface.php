@@ -6,5 +6,5 @@ namespace Seacommerce\Mapper\Extractor;
 
 interface PropertyExtractorInterface
 {
-    public function getProperties(string $class) : array;
+    public function getProperties(string $class) : ?array;
 }

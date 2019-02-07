@@ -24,7 +24,7 @@ class DefaultPropertyExtractor implements PropertyExtractorInterface
         $this->propertyInfoExtractor = new PropertyInfoExtractor($listExtractors, $typeExtractors, $descriptionExtractors, $accessExtractors, $propertyInitializableExtractors);
     }
 
-    public function getProperties(string $class): array
+    public function getProperties(string $class): ?array
     {
         $properties = $this->propertyInfoExtractor->getProperties($class);
         return $properties;

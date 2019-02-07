@@ -2,6 +2,7 @@
 
 namespace Seacommerce\Mapper;
 
+use Seacommerce\Mapper\Exception\InvalidArgumentException;
 use Seacommerce\Mapper\Exception\ValidationErrorsException;
 use Seacommerce\Mapper\Exception\PropertyNotFoundException;
 use Seacommerce\Mapper\Extractor\DefaultPropertyExtractor;
@@ -179,8 +180,18 @@ class Configuration implements ConfigurationInterface
     private function extractProperties(): void
     {
         $extractor = new DefaultPropertyExtractor();
-        $this->sourceProperties = array_flip($extractor->getProperties($this->sourceClass));
-        $this->targetProperties = array_flip($extractor->getProperties($this->targetClass));
+        $s = $extractor->getProperties($this->sourceClass);
+        $t = $extractor->getProperties($this->targetClass);
+        if (empty($s)) {
+            throw new PropertyNotFoundException($this->sourceClass, []);
+        }
+
+        if (empty($t)) {
+            throw new PropertyNotFoundException($this->targetClass, []);
+        }
+
+        $this->sourceProperties = array_flip($s);
+        $this->targetProperties = array_flip($t);
     }
 
     /**
