@@ -42,6 +42,22 @@ class PropertyAccessCompiler implements CompilerInterface
         $this->cacheFolder = $cacheFolder;
     }
 
+    /**
+     * @return string|null
+     */
+    public function getNamespace(): ?string
+    {
+        return $this->namespace;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getCacheFolder(): ?string
+    {
+        return $this->cacheFolder;
+    }
+
     public function compile(ConfigurationInterface $configuration): void
     {
         static $factory = null;
@@ -129,15 +145,22 @@ class PropertyAccessCompiler implements CompilerInterface
             );
 
         $node = $builder->getNode();
-        $str = $prettyPrinter->prettyPrintFile([$node]) . PHP_EOL;
-        $filePath = $this->cacheFolder . '/' . $className . '.php';
-        if (!empty($this->cacheFolder)) {
-            if (!file_exists($this->cacheFolder)) {
-                mkdir($this->cacheFolder, 0777, true);
+
+        if(!empty($this->cacheFolder)) {
+            $str = $prettyPrinter->prettyPrintFile([$node]) . PHP_EOL;
+            $filePath = $this->cacheFolder . '/' . $className . '.php';
+            if (!empty($this->cacheFolder)) {
+                if (!file_exists($this->cacheFolder)) {
+                    mkdir($this->cacheFolder, 0777, true);
+                }
+                file_put_contents($filePath, $str);
             }
-            file_put_contents($filePath, $str);
+            require_once $filePath;
         }
-        require_once $filePath;
+        else {
+            $str = $prettyPrinter->prettyPrint([$node]) . PHP_EOL;
+            eval($str);
+        }
     }
 
     public function getMappingClassName(ConfigurationInterface $configuration): string

@@ -3,8 +3,8 @@
 
 namespace Seacommerce\Mapper;
 
+use Seacommerce\Mapper\Exception\AggregatedValidationErrorsException;
 use Seacommerce\Mapper\Exception\DuplicateConfigurationException;
-use Seacommerce\Mapper\Exception\ValidationErrorsException;
 
 class Registry implements RegistryInterface
 {
@@ -64,19 +64,19 @@ class Registry implements RegistryInterface
 
     /**
      * @param bool $throw
-     * @return array
-     * @throws ValidationErrorsException
+     * @return AggregatedValidationErrorsException|null
+     * @throws AggregatedValidationErrorsException
      */
-    public function validate(bool $throw = true): array
+    public function validate(bool $throw = true): ?AggregatedValidationErrorsException
     {
-        $errors = [];
+        $all = [];
         foreach ($this->registry as $key => $config) {
-            $errors = array_merge($errors, $config->validate(false));
+            $all[] = $config->validate(false);
         }
-        if ($throw && !empty($errors)) {
-            throw new ValidationErrorsException($errors);
+        if ($throw && !empty($all)) {
+            throw new AggregatedValidationErrorsException($all);
         }
-        return $errors;
+        return null;
     }
 
     /**

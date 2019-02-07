@@ -2,6 +2,7 @@
 
 namespace Seacommerce\Mapper;
 
+use Seacommerce\Mapper\Exception\AggregatedValidationErrorsException;
 use Seacommerce\Mapper\Exception\ValidationErrorsException;
 use IteratorAggregate;
 
@@ -36,8 +37,7 @@ interface RegistryInterface extends IteratorAggregate
     /**
      * Validate all the registrered configurations.
      * @param bool $throw
-     * @return array
-     * @throws ValidationErrorsException
+     * @return AggregatedValidationErrorsException|null
      */
-    public function validate(bool $throw = true): array;
+    public function validate(bool $throw = true): ?AggregatedValidationErrorsException;
 }

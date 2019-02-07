@@ -2,6 +2,7 @@
 
 namespace Seacommerce\Mapper;
 
+use Seacommerce\Mapper\Exception\ValidationErrorsException;
 use Seacommerce\Mapper\Operation\OperationInterface;
 
 interface ConfigurationInterface
@@ -33,7 +34,7 @@ interface ConfigurationInterface
 
     public function custom(string $property, OperationInterface $operation): ConfigurationInterface;
 
-    public function validate(bool $throw = true): array;
+    public function validate(bool $throw = true): ?ValidationErrorsException;
 
     public  function getOperations() : array;
 }

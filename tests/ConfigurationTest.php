@@ -18,7 +18,8 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
             ->callback('callback', function () {
                 return 'x';
             })
-            ->constValue('fixed', 100)->validate(false);
+            ->constValue('fixed', 100)
+            ->validate(false);
         $this->assertEmpty($errors);
     }
 
@@ -63,7 +64,8 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
     {
         $errors = (new Configuration(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class, 'X'))
             ->automap()
-            ->ignore('dateTime', 'fixed', 'ignore')->validate();
+            ->ignore('dateTime', 'fixed', 'ignore')
+            ->validate();
 
         $this->assertEmpty($errors);
     }

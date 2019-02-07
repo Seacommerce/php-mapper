@@ -8,6 +8,9 @@ use Seacommerce\Mapper\Registry;
 
 class RegistryTest extends \PHPUnit\Framework\TestCase
 {
+    /**
+     * @throws \Seacommerce\Mapper\Exception\AggregatedValidationErrorsException
+     */
     public function testInitialization()
     {
         $registry = new Registry('reg');

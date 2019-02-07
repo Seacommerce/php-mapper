@@ -13,7 +13,7 @@ class ConfigurationNotFoundException extends \Exception
     {
         $this->sourceClass = $sourceClass;
         $this->targetClass = $targetClass;
-        parent::__construct("Configuration for mapping from '{$sourceClass}' to '{$sourceClass}' could not be found.", 0, null);
+        parent::__construct("Configuration for mapping from '{$sourceClass}' to '{$targetClass}' could not be found.", 0, null);
     }
 
     /** @return string */

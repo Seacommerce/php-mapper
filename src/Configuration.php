@@ -2,7 +2,6 @@
 
 namespace Seacommerce\Mapper;
 
-use Seacommerce\Mapper\Exception\InvalidArgumentException;
 use Seacommerce\Mapper\Exception\ValidationErrorsException;
 use Seacommerce\Mapper\Exception\PropertyNotFoundException;
 use Seacommerce\Mapper\Extractor\DefaultPropertyExtractor;
@@ -30,6 +29,13 @@ class Configuration implements ConfigurationInterface
     /** @var array */
     private $operations = [];
 
+    /**
+     * Configuration constructor.
+     * @param string $sourceClass
+     * @param string $targetClass
+     * @param string $scope
+     * @throws PropertyNotFoundException
+     */
     public function __construct(string $sourceClass, string $targetClass, string $scope)
     {
         $this->sourceClass = $sourceClass;
@@ -156,20 +162,24 @@ class Configuration implements ConfigurationInterface
 
     /**
      * @param bool $throw
-     * @return array
+     * @return ValidationErrorsException
      * @throws ValidationErrorsException
      */
-    public function validate(bool $throw = true): array
+    public function validate(bool $throw = true): ?ValidationErrorsException
     {
         $diff = array_keys(array_diff_key($this->targetProperties, $this->operations));
         $errors = [];
         foreach ($diff as $property) {
             $errors[] = "Missing mapping for property '{$property}'.";
         }
-        if ($throw && !empty($errors)) {
-            throw new ValidationErrorsException($errors);
+        if (empty($errors)) {
+            return null;
         }
-        return $errors;
+        $ex = new ValidationErrorsException($this->sourceClass, $this->targetClass, $errors);
+        if ($throw) {
+            throw $ex;
+        }
+        return $ex;
     }
 
     public function getOperations(): array
@@ -177,6 +187,9 @@ class Configuration implements ConfigurationInterface
         return $this->operations;
     }
 
+    /**
+     * @throws PropertyNotFoundException
+     */
     private function extractProperties(): void
     {
         $extractor = new DefaultPropertyExtractor();

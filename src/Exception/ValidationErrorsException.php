@@ -6,15 +6,43 @@ namespace Seacommerce\Mapper\Exception;
 
 class ValidationErrorsException extends \Exception
 {
-    /** @var array */
+    /** @var string */
+    private $sourceClass;
+
+    /** @var string */
+    private $targetClass;
+
+    /** @var string[] */
     private $errors;
 
-    public function __construct(array $errors)
+    /**
+     * ValidationErrorsException constructor.
+     * @param string $sourceClass
+     * @param string $targetClass
+     * @param string[] $errors
+     */
+    public function __construct(string $sourceClass, string $targetClass, array $errors)
     {
-        // TODO: Custom class for validation errors that holds some extra info.
         $this->errors = $errors;
-        $message = join("\n\t- ", $errors);
-        parent::__construct("Mapping validation errors: \n\t- {$message}", 0, null);
+        $m = "Mapping validation errors for {$sourceClass} -> {$targetClass}\n\n  - ";
+        $m .= join("\n  - ", $errors);
+        parent::__construct($m, 0, null);
+    }
+
+    /**
+     * @return string
+     */
+    public function getSourceClass(): string
+    {
+        return $this->sourceClass;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTargetClass(): string
+    {
+        return $this->targetClass;
     }
 
     /**
