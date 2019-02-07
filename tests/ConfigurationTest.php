@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Seacommerce\Mapper\Test;
 
+use Seacommerce\Mapper\Exception\PropertyNotFoundException;
 use Seacommerce\Mapper\Exception\ValidationErrorsException;
 use Seacommerce\Mapper\Registry;
 
@@ -76,5 +77,29 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
 
         $errors = $registry->validate(false);
         $this->assertEmpty($errors);
+    }
+
+    public function testIgnorePropertyNotFound()
+    {
+        $this->expectException(PropertyNotFoundException::class);
+        $registry = new Registry();
+        $registry->add(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class)
+            ->ignore('nonExisting');
+    }
+
+    public function testMapSourcePropertyNotFound()
+    {
+        $this->expectException(PropertyNotFoundException::class);
+        $registry = new Registry();
+        $registry->add(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class)
+            ->map(['dateTime' => 'nonExisting']);
+    }
+
+    public function testMapTargetPropertyNotFound()
+    {
+        $this->expectException(PropertyNotFoundException::class);
+        $registry = new Registry();
+        $registry->add(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class)
+            ->map(['nonExisting' => 'date']);
     }
 }

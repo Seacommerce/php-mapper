@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Seacommerce\Mapper\Test;
 
+use Seacommerce\Mapper\Exception\ConfigurationNotFoundException;
 use Seacommerce\Mapper\Exception\DuplicateConfigurationException;
 use Seacommerce\Mapper\Registry;
 

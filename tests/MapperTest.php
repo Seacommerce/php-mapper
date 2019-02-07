@@ -5,11 +5,43 @@ namespace Seacommerce\Mapper\Test;
 
 use DateTime;
 use Seacommerce\Mapper\Compiler\PropertyAccessCompiler;
+use Seacommerce\Mapper\Exception\ClassNotFoundException;
+use Seacommerce\Mapper\Exception\ConfigurationNotFoundException;
+use Seacommerce\Mapper\Exception\InvalidArgumentException;
 use Seacommerce\Mapper\Mapper;
 use Seacommerce\Mapper\Registry;
 
 class MapperTest extends \PHPUnit\Framework\TestCase
 {
+    public function testMissingConfigurationThrowsException()
+    {
+        $this->expectException(ConfigurationNotFoundException::class);
+        $registry = new Registry();
+        $mapper = new Mapper($registry, new PropertyAccessCompiler('./var/cache'));
+        $mapper->map(new Model\PublicFields\Source(), Model\PublicFields\Target::class);
+    }
+
+    public function testNonObjectOrArrayAsSourceThrowsException()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $registry = new Registry();
+        $mapper = new Mapper($registry, new PropertyAccessCompiler('./var/cache'));
+        $mapper->map(1, Model\PublicFields\Target::class);
+    }
+
+    public function testNonExistingClassNameAsTargetThrowsException()
+    {
+        $this->expectException(ClassNotFoundException::class);
+        $registry = new Registry();
+        $mapper = new Mapper($registry, new PropertyAccessCompiler('./var/cache'));
+        $mapper->map(new Model\PublicFields\Source(), 'NonExistingClass');
+    }
+
+
+    /**
+     * @throws ClassNotFoundException
+     * @throws ConfigurationNotFoundException
+     */
     public function testMapToClass()
     {
         $registry = new Registry();
@@ -22,13 +54,13 @@ class MapperTest extends \PHPUnit\Framework\TestCase
             })
             ->constValue('fixed', 100);
 
-        $mapper = new Mapper($registry, new PropertyAccessCompiler( './var/cache'));
+        $mapper = new Mapper($registry, new PropertyAccessCompiler('./var/cache'));
 
 
         $source = new Model\PublicFields\Source();
         $source->id = 1;
-        $source->name= "Sil";
-        $source->date= new DateTime();
+        $source->name = "Sil";
+        $source->date = new DateTime();
 
         /** @var Model\PublicFields\Target $target */
         $target = $mapper->map($source, Model\PublicFields\Target::class);

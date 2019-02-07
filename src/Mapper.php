@@ -83,7 +83,6 @@ class Mapper implements MapperInterface
     /**
      * @param string|object|array $source
      * @return string
-     * @throws ClassNotFoundException
      */
     private function validateSource($source)
     {
@@ -91,11 +90,6 @@ class Mapper implements MapperInterface
             return 'array';
         } else if (is_object($source)) {
             return get_class($source);
-        } else if (is_string($source)) {
-            if (!class_exists($source)) {
-                throw new ClassNotFoundException($source);
-            }
-            return $source;
         }
         throw new InvalidArgumentException($source, "Expected an object, an array or an existing class name.");
     }
@@ -108,7 +102,10 @@ class Mapper implements MapperInterface
     private function validateTarget($source)
     {
         if (is_string($source)) {
-            if ($source == 'array' && !class_exists($source)) {
+            if ($source == 'array') {
+                return 'array';
+            }
+            if (!class_exists($source)) {
                 throw new ClassNotFoundException($source);
             }
             return $source;
