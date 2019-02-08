@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Seacommerce\Mapper\Test;
 
+use Seacommerce\Mapper\Exception\AggregatedValidationErrorsException;
 use Seacommerce\Mapper\Exception\DuplicateConfigurationException;
 use Seacommerce\Mapper\Registry;
 
@@ -33,5 +34,24 @@ class RegistryTest extends \PHPUnit\Framework\TestCase
         $registry = new Registry();
         $registry->add(Model\PublicFields\Source::class, Model\PublicFields\Target::class);
         $registry->add(Model\PublicFields\Source::class, Model\PublicFields\Target::class);
+    }
+
+    public function testValidateValidMappingShouldReturnNull()
+    {
+        $registry = new Registry();
+        $registry->add(Model\PublicFields\Source::class, Model\PublicFields\Target::class)
+            ->automap()
+            ->ignore('dateTime', 'fixed', 'ignore');
+        $exception = $registry->validate(false);
+        $this->assertNull($exception);
+    }
+
+    public function testValidateInvalidMappingShouldReturnException()
+    {
+        $registry = new Registry();
+        $registry->add(Model\PublicFields\Source::class, Model\PublicFields\Target::class)
+            ->automap();
+        $exception = $registry->validate(false);
+        $this->assertInstanceOf(AggregatedValidationErrorsException::class, $exception);
     }
 }

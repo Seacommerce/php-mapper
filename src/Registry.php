@@ -73,10 +73,15 @@ class Registry implements RegistryInterface
         foreach ($this->registry as $key => $config) {
             $all[] = $config->validate(false);
         }
-        if ($throw && !empty($all)) {
-            throw new AggregatedValidationErrorsException($all);
+        $all = array_filter($all);
+        if (empty($all)) {
+            return null;
         }
-        return null;
+        $ex = new AggregatedValidationErrorsException($all);
+        if ($throw) {
+            throw $ex;
+        }
+        return $ex;
     }
 
     /**
