@@ -29,6 +29,8 @@ class Configuration implements ConfigurationInterface
     /** @var array */
     private $operations = [];
 
+    private $_allowMapFromSubClass = false;
+
     /**
      * Configuration constructor.
      * @param string $sourceClass
@@ -186,6 +188,18 @@ class Configuration implements ConfigurationInterface
     {
         return $this->operations;
     }
+
+    public function allowMapFromSubClass(bool $allow = true): ConfigurationInterface
+    {
+        $this->_allowMapFromSubClass = $allow;
+        return $this;
+    }
+
+    public function getAllowMapFromSubClass()
+    {
+        return $this->_allowMapFromSubClass;
+    }
+
 
     /**
      * @throws PropertyNotFoundException

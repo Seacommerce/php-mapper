@@ -3,7 +3,6 @@
 namespace Seacommerce\Mapper;
 
 use Seacommerce\Mapper\Exception\AggregatedValidationErrorsException;
-use Seacommerce\Mapper\Exception\ValidationErrorsException;
 use IteratorAggregate;
 
 interface RegistryInterface extends IteratorAggregate
@@ -35,7 +34,7 @@ interface RegistryInterface extends IteratorAggregate
     public function get(string $source, string $dest): ?ConfigurationInterface;
 
     /**
-     * Validate all the registrered configurations.
+     * Validate all the registered configurations.
      * @param bool $throw
      * @return AggregatedValidationErrorsException|null
      */

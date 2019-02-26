@@ -92,4 +92,43 @@ class MapperTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('x', $target->callback);
         $this->assertEquals(100, $target->fixed);
     }
+
+    /**
+     * @throws ClassNotFoundException
+     * @throws ConfigurationNotFoundException
+     * @throws \Exception
+     */
+    public function testMapToSubclass()
+    {
+        $registry = new Registry();
+        $registry->add(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class)
+            ->automap()
+            ->allowMapFromSubClass()
+            ->ignore('ignore')
+            ->map(['dateTime' => 'date'])
+            ->callback('callback', function () {
+                return 'x';
+            })
+            ->constValue('fixed', 100);
+
+        $mapper = new Mapper($registry, new PropertyAccessCompiler('./var/cache'));
+
+
+        $source = new Model\GettersSetters\SourceSubclass();
+        $source->setId(1);
+        $source->setName("Sil");
+        $source->setDate(new DateTime());
+
+        /** @var Model\GettersSetters\Target $target */
+        $target = $mapper->map($source, Model\GettersSetters\Target::class);
+
+        $this->assertNotNull($target);
+        $this->assertInstanceOf(Model\GettersSetters\Target::class, $target);
+        $this->assertNull($target->getIgnore());
+        $this->assertEquals($source->getId(), $target->getId());
+        $this->assertEquals($source->getName(), $target->getName());
+        $this->assertEquals($source->getDate(), $target->getDateTime());
+        $this->assertEquals('x', $target->getCallback());
+        $this->assertEquals(100, $target->getFixed());
+    }
 }

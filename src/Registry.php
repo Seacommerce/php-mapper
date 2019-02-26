@@ -52,14 +52,26 @@ class Registry implements RegistryInterface
 
     public function has(string $source, string $target): bool
     {
-        $key = $this->getConfigurationKey($source, $target);
-        return isset($this->registry[$key]);
+        return $this->get($source, $target) !== null;
     }
 
     public function get(string $source, string $dest): ?ConfigurationInterface
     {
-        $key = $this->getConfigurationKey($source, $dest);
-        return isset($this->registry[$key]) ? $this->registry[$key] : null;
+        $s = $source;
+        for (; ;) {
+            $key = $this->getConfigurationKey($s, $dest);
+            $configuration = $this->registry[$key] ?? null;
+            if ($configuration !== null && (!isset($super) || $configuration->getAllowMapFromSubClass())) {
+                return $configuration;
+            }
+            $super = get_parent_class($s);
+            if ($super) {
+                $s = $super;
+            } else {
+                return null;
+            }
+        }
+        return null;
     }
 
     /**

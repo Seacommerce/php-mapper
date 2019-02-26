@@ -37,4 +37,8 @@ interface ConfigurationInterface
     public function validate(bool $throw = true): ?ValidationErrorsException;
 
     public  function getOperations() : array;
+
+    public function getAllowMapFromSubClass();
+
+    public function allowMapFromSubClass(bool $allow = true): ConfigurationInterface;
 }
