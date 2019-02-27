@@ -3,7 +3,7 @@
 namespace Seacommerce\Mapper;
 
 use Seacommerce\Mapper\Exception\ValidationErrorsException;
-use Seacommerce\Mapper\Operation\OperationInterface;
+use Seacommerce\Mapper\OperationInterface;
 
 interface ConfigurationInterface
 {
@@ -22,16 +22,58 @@ interface ConfigurationInterface
      */
     public function getScope(): string;
 
+    /**
+     * @return array
+     */
+    public function getSourceProperties();
+
+    /**
+     * @return array
+     */
+    public function getTargetProperties(): array;
+
     public function automap(): ConfigurationInterface;
 
+    public function forMember(string $property, OperationInterface $operation): ConfigurationInterface;
+
+    public function forMembers(array $properties, OperationInterface $operation): ConfigurationInterface;
+
+    /**
+     * @param string ...$property
+     * @return ConfigurationInterface
+     * @deprecated Use forMember('foo', Operations::ignore()) instead.
+     */
     public function ignore(string ... $property): ConfigurationInterface;
 
+    /**
+     * @param array $properties
+     * @return ConfigurationInterface
+     * @deprecated Use forMember('target', Operations::mapFrom('source')) instead.
+     */
     public function map(array $properties): ConfigurationInterface;
 
+    /**
+     * @param string $property
+     * @param callable $callback
+     * @return ConfigurationInterface
+     * @deprecated Use forMember('foo', Operations::callback($callable)) instead.
+     */
     public function callback(string $property, callable $callback): ConfigurationInterface;
 
+    /**
+     * @param string $property
+     * @param $value
+     * @return ConfigurationInterface
+     * @deprecated Use forMember('foo', Operations::const($val)) instead.
+     */
     public function constValue(string $property, $value): ConfigurationInterface;
 
+    /**
+     * @param string $property
+     * @param OperationInterface $operation
+     * @return ConfigurationInterface
+     * @deprecated Use forMember('foo', new CustomOperation()) instead.
+     */
     public function custom(string $property, OperationInterface $operation): ConfigurationInterface;
 
     public function validate(bool $throw = true): ?ValidationErrorsException;

@@ -5,11 +5,6 @@ namespace Seacommerce\Mapper;
 use Seacommerce\Mapper\Exception\ValidationErrorsException;
 use Seacommerce\Mapper\Exception\PropertyNotFoundException;
 use Seacommerce\Mapper\Extractor\DefaultPropertyExtractor;
-use Seacommerce\Mapper\Operation\CallbackOperation;
-use Seacommerce\Mapper\Operation\IgnoreOperation;
-use Seacommerce\Mapper\Operation\MapOperation;
-use Seacommerce\Mapper\Operation\OperationInterface;
-use Seacommerce\Mapper\Operation\ConstValueOperation;
 
 class Configuration implements ConfigurationInterface
 {
@@ -70,12 +65,54 @@ class Configuration implements ConfigurationInterface
         return $this->scope;
     }
 
+    /**
+     * @return array
+     */
+    public function getSourceProperties(): array
+    {
+        return $this->sourceProperties;
+    }
+
+    /**
+     * @return array
+     */
+    public function getTargetProperties(): array
+    {
+        return $this->targetProperties;
+    }
+
     public function automap(): ConfigurationInterface
     {
         $matching = array_keys(array_intersect_key($this->sourceProperties, $this->targetProperties));
         $unmapped = array_diff($matching, array_keys($this->operations));
         foreach ($unmapped as $p) {
-            $this->operations[$p] = new MapOperation($p);
+            $this->operations[$p] = new FromProperty($p);
+        }
+        return $this;
+    }
+
+    /**
+     * @param string $property
+     * @param OperationInterface $operation
+     * @return ConfigurationInterface
+     * @throws \Exception
+     */
+    public function forMember(string $property, OperationInterface $operation): ConfigurationInterface {
+        $this->ensureTargetProperty($property);
+        $this->operations[$property] = $operation;
+        return $this;
+    }
+
+    /**
+     * @param array $properties
+     * @param \Seacommerce\Mapper\OperationInterface $operation
+     * @return ConfigurationInterface
+     * @throws \Exception
+     */
+    public function forMembers(array $properties, OperationInterface $operation): ConfigurationInterface {
+        foreach ($properties as $p) {
+            $this->ensureTargetProperty($p);
+            $this->operations[$p] = $operation;
         }
         return $this;
     }
@@ -89,7 +126,7 @@ class Configuration implements ConfigurationInterface
     {
         foreach ($property as $p) {
             $this->ensureTargetProperty($p);
-            $this->operations[$p] = new IgnoreOperation();
+            $this->operations[$p] = new Ignore();
         }
         return $this;
     }
@@ -104,7 +141,7 @@ class Configuration implements ConfigurationInterface
         foreach ($properties as $t => $s) {
             $this->ensureTargetProperty($t);
             $this->ensureSourceProperty($s);
-            $this->operations[$t] = new MapOperation($s);
+            $this->operations[$t] = new FromProperty($s);
         }
         return $this;
     }
@@ -118,7 +155,7 @@ class Configuration implements ConfigurationInterface
     public function callback(string $property, callable $callback): ConfigurationInterface
     {
         $this->ensureTargetProperty($property);
-        $this->operations[$property] = new CallbackOperation($callback);
+        $this->operations[$property] = new MapFrom($callback);
         return $this;
     }
 
@@ -131,7 +168,7 @@ class Configuration implements ConfigurationInterface
     public function constValue(string $property, $value): ConfigurationInterface
     {
         $this->ensureTargetProperty($property);
-        $this->operations[$property] = new ConstValueOperation($value);
+        $this->operations[$property] = new SetTo($value);
         return $this;
     }
 
@@ -217,8 +254,8 @@ class Configuration implements ConfigurationInterface
             throw new PropertyNotFoundException('*any*', []);
         }
 
-        $this->sourceProperties = array_flip($s);
-        $this->targetProperties = array_flip($t);
+        $this->sourceProperties = $s;
+        $this->targetProperties = $t;
     }
 
     /**

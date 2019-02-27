@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Seacommerce\Mapper\Operation;
+namespace Seacommerce\Mapper;
 
 interface OperationInterface
 {

@@ -32,7 +32,6 @@ class Registry implements RegistryInterface
         return $this->scope;
     }
 
-
     /**
      * @param string $source
      * @param string $target

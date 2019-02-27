@@ -17,6 +17,9 @@ class Target
     /** @var DateTime */
     private $dateTime;
 
+    /** @var DateTime */
+    private $dateMutable;
+
     /** @var string|null */
     private $callback;
 
@@ -77,6 +80,24 @@ class Target
     public function setDateTime(DateTime $dateTime): Target
     {
         $this->dateTime = $dateTime;
+        return $this;
+    }
+
+    /**
+     * @return DateTime
+     */
+    public function getDateMutable(): DateTime
+    {
+        return $this->dateMutable;
+    }
+
+    /**
+     * @param DateTime $dateMutable
+     * @return Target
+     */
+    public function setDateMutable(DateTime $dateMutable): Target
+    {
+        $this->dateMutable = $dateMutable;
         return $this;
     }
 

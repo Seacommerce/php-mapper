@@ -9,10 +9,16 @@ use Seacommerce\Mapper\Exception\ClassNotFoundException;
 use Seacommerce\Mapper\Exception\ConfigurationNotFoundException;
 use Seacommerce\Mapper\Exception\InvalidArgumentException;
 use Seacommerce\Mapper\Mapper;
+use Seacommerce\Mapper\Operation;
 use Seacommerce\Mapper\Registry;
+use Seacommerce\Mapper\ValueConverter\DateTimeConverter;
 
 class MapperTest extends \PHPUnit\Framework\TestCase
 {
+    /**
+     * @throws ClassNotFoundException
+     * @throws ConfigurationNotFoundException
+     */
     public function testMissingConfigurationThrowsException()
     {
         $this->expectException(ConfigurationNotFoundException::class);
@@ -21,6 +27,10 @@ class MapperTest extends \PHPUnit\Framework\TestCase
         $mapper->map(new Model\PublicFields\Source(), Model\PublicFields\Target::class);
     }
 
+    /**
+     * @throws ClassNotFoundException
+     * @throws ConfigurationNotFoundException
+     */
     public function testNonObjectOrArrayAsSourceThrowsException()
     {
         $this->expectException(InvalidArgumentException::class);
@@ -29,6 +39,10 @@ class MapperTest extends \PHPUnit\Framework\TestCase
         $mapper->map(1, Model\PublicFields\Target::class);
     }
 
+    /**
+     * @throws ClassNotFoundException
+     * @throws ConfigurationNotFoundException
+     */
     public function testNonExistingClassNameAsTargetThrowsException()
     {
         $this->expectException(ClassNotFoundException::class);
@@ -37,12 +51,16 @@ class MapperTest extends \PHPUnit\Framework\TestCase
         $mapper->map(new Model\PublicFields\Source(), 'NonExistingClass');
     }
 
+    /**
+     * @throws \Exception
+     */
     public function testCompile()
     {
         $registry = new Registry();
         $registry->add(Model\PublicFields\Source::class, Model\PublicFields\Target::class)
             ->automap()
-            ->ignore('ignore', 'dateTime',  'callback', 'fixed');
+            ->forMembers(['ignore', 'dateTime',  'callback', 'fixed'], Operation::ignore())
+            ->validate();
 
         $mapper = new Mapper($registry, new PropertyAccessCompiler('./var/cache'));
         $mapper->compile();
@@ -59,18 +77,20 @@ class MapperTest extends \PHPUnit\Framework\TestCase
     /**
      * @throws ClassNotFoundException
      * @throws ConfigurationNotFoundException
+     * @throws \Exception
      */
     public function testMapToClass()
     {
         $registry = new Registry();
         $registry->add(Model\PublicFields\Source::class, Model\PublicFields\Target::class)
             ->automap()
-            ->ignore('ignore')
-            ->map(['dateTime' => 'date'])
-            ->callback('callback', function () {
+            ->forMember('ignore', Operation::ignore())
+            ->forMember('dateTime', Operation::fromProperty('date'))
+            ->forMember('callback', Operation::mapFrom(function () {
                 return 'x';
-            })
-            ->constValue('fixed', 100);
+            }))
+            ->forMember('fixed', Operation::setTo(100))
+            ->validate();
 
         $mapper = new Mapper($registry, new PropertyAccessCompiler('./var/cache'));
 
@@ -104,12 +124,15 @@ class MapperTest extends \PHPUnit\Framework\TestCase
         $registry->add(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class)
             ->automap()
             ->allowMapFromSubClass()
-            ->ignore('ignore')
-            ->map(['dateTime' => 'date'])
-            ->callback('callback', function () {
+            ->forMember('dateMutable', Operation::fromProperty('dateImmutable')->useConverter(DateTimeConverter::toMutable()))
+            ->forMember('ignore', Operation::ignore())
+            ->forMember('dateTime', Operation::fromProperty('date'))
+            ->forMember('callback', Operation::mapFrom(function () {
                 return 'x';
-            })
-            ->constValue('fixed', 100);
+            }))
+            ->forMember('fixed', Operation::setTo(100))
+            ->validate();
+
 
         $mapper = new Mapper($registry, new PropertyAccessCompiler('./var/cache'));
 
@@ -118,6 +141,7 @@ class MapperTest extends \PHPUnit\Framework\TestCase
         $source->setId(1);
         $source->setName("Sil");
         $source->setDate(new DateTime());
+        $source->setDateImmutable(new \DateTimeImmutable());
 
         /** @var Model\GettersSetters\Target $target */
         $target = $mapper->map($source, Model\GettersSetters\Target::class);
@@ -130,5 +154,6 @@ class MapperTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($source->getDate(), $target->getDateTime());
         $this->assertEquals('x', $target->getCallback());
         $this->assertEquals(100, $target->getFixed());
+        $this->assertInstanceOf(DateTime::class, $target->getDateMutable());
     }
 }

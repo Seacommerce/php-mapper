@@ -19,10 +19,11 @@ use PhpParser\PrettyPrinter;
 use Seacommerce\Mapper\ConfigurationInterface;
 use Seacommerce\Mapper\Context;
 use Seacommerce\Mapper\MapperInterface;
-use Seacommerce\Mapper\Operation\CallbackOperation;
-use Seacommerce\Mapper\Operation\MapOperation;
-use Seacommerce\Mapper\Operation\IgnoreOperation;
-use Seacommerce\Mapper\Operation\ConstValueOperation;
+use Seacommerce\Mapper\MapFrom;
+use Seacommerce\Mapper\FromProperty;
+use Seacommerce\Mapper\Ignore;
+use Seacommerce\Mapper\SetTo;
+use Seacommerce\Mapper\ValueConverter\ValueConverterInterface;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 
 class PropertyAccessCompiler implements CompilerInterface
@@ -72,6 +73,10 @@ class PropertyAccessCompiler implements CompilerInterface
         $mapper = new Variable('mapper');
         $context = new Variable('context');
 
+        $getOperation = function (string $property) use ($factory, $context) {
+            return new ArrayDimFetch($factory->methodCall($factory->methodCall($context, 'getConfiguration'), 'getOperations'), $factory->val($property));
+        };
+
         $stmts[] = new If_(new Identical(new ConstFetch(new Name('null')), $source), ['stmts' => [new Return_($source)]]);
         $stmts[] = new Static_([$accessor]);
         $stmts[] = new If_(new Identical(new ConstFetch(new Name('null')), $accessor), [
@@ -81,26 +86,31 @@ class PropertyAccessCompiler implements CompilerInterface
             ]
         ]);
         foreach ($configuration->getOperations() as $property => $operation) {
-            if ($operation instanceof CallbackOperation) {
-                //('aap', $source, $target, $mapper, $context)
+            if ($operation instanceof MapFrom) {
                 $stmts[] = $factory->methodCall($accessor, 'setValue', [
                     $target,
                     $property,
-                    $factory->funcCall($factory->methodCall(new ArrayDimFetch($factory->methodCall($factory->methodCall($context, 'getConfiguration'), 'getOperations'), $factory->val($property)), 'getCallback'), [
+                    $factory->funcCall($factory->methodCall($getOperation($property), 'getCallback'), [
                         $factory->val($property), $source, $target, $mapper, $context
                     ])
                 ]);
-            } else if ($operation instanceof MapOperation) {
-                $stmts[] = $factory->methodCall($accessor, 'setValue', [
-                    $target,
-                    $property,
-                    $factory->methodCall($accessor, 'getValue', [$source, $operation->getFrom()])
-                ]);
-            } else if ($operation instanceof IgnoreOperation) {
+            } else if ($operation instanceof FromProperty) {
+                $get = $factory->methodCall($accessor, 'getValue', [$source, $operation->getFrom()]);
+                if ($operation->getConverter() !== null) {
+                    if (is_callable($operation->getConverter())) {
+                        $get = $factory->funcCall($factory->methodCall($getOperation($property), 'getConverter'), [$get]);
+                    } else if ($operation->getConverter() instanceof ValueConverterInterface) {
+                        $get = $factory->methodCall($factory->methodCall($getOperation($property), 'getConverter'), 'convert', [$get]);
+                    }
+                }
+                $set = $factory->methodCall($accessor, 'setValue', [$target, $property, $get]);
+                $stmts[] = $set;
+
+            } else if ($operation instanceof Ignore) {
                 $nop = new Nop();
                 $nop->setDocComment(new Doc("// Property '{$property}' was explicitly ignored."));
                 $stmts[] = $nop;
-            } else if ($operation instanceof ConstValueOperation) {
+            } else if ($operation instanceof SetTo) {
                 $stmts[] = $factory->methodCall($accessor, 'setValue', [
                     $target,
                     $property,
@@ -146,7 +156,7 @@ class PropertyAccessCompiler implements CompilerInterface
 
         $node = $builder->getNode();
 
-        if(!empty($this->cacheFolder)) {
+        if (!empty($this->cacheFolder)) {
             $str = $prettyPrinter->prettyPrintFile([$node]) . PHP_EOL;
             $filePath = $this->cacheFolder . '/' . $className . '.php';
             if (!empty($this->cacheFolder)) {
@@ -156,8 +166,7 @@ class PropertyAccessCompiler implements CompilerInterface
                 file_put_contents($filePath, $str);
             }
             require_once $filePath;
-        }
-        else {
+        } else {
             $str = $prettyPrinter->prettyPrint([$node]) . PHP_EOL;
             eval($str);
         }

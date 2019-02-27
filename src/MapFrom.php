@@ -1,10 +1,12 @@
 <?php
 
 
-namespace Seacommerce\Mapper\Operation;
+namespace Seacommerce\Mapper;
 
 
-class CallbackOperation implements OperationInterface
+use Seacommerce\Mapper\OperationInterface;
+
+class MapFrom implements OperationInterface
 {
     /** @var callable */
     private $callback;

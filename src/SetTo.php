@@ -1,8 +1,10 @@
 <?php
 
-namespace Seacommerce\Mapper\Operation;
+namespace Seacommerce\Mapper;
 
-class ConstValueOperation implements OperationInterface
+use Seacommerce\Mapper\OperationInterface;
+
+class SetTo implements OperationInterface
 {
     /** @var mixed */
     private $value;

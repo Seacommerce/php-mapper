@@ -5,6 +5,7 @@ namespace Seacommerce\Mapper\Test\Model\GettersSetters;
 
 
 use DateTime;
+use DateTimeImmutable;
 
 class Source
 {
@@ -16,6 +17,9 @@ class Source
 
     /** @var DateTime */
     private $date;
+
+    /** @var DateTimeImmutable */
+    private $dateImmutable;
 
     /** @var string|null */
     private $callback;
@@ -71,6 +75,24 @@ class Source
     public function setDate(DateTime $date): Source
     {
         $this->date = $date;
+        return $this;
+    }
+
+    /**
+     * @return DateTimeImmutable
+     */
+    public function getDateImmutable(): DateTimeImmutable
+    {
+        return $this->dateImmutable;
+    }
+
+    /**
+     * @param DateTimeImmutable $dateImmutable
+     * @return Source
+     */
+    public function setDateImmutable(DateTimeImmutable $dateImmutable): Source
+    {
+        $this->dateImmutable = $dateImmutable;
         return $this;
     }
 

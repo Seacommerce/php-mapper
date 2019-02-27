@@ -6,6 +6,7 @@ namespace Seacommerce\Mapper\Test;
 use Seacommerce\Mapper\Configuration;
 use Seacommerce\Mapper\Exception\PropertyNotFoundException;
 use Seacommerce\Mapper\Exception\ValidationErrorsException;
+use Seacommerce\Mapper\FromProperty;
 
 class ConfigurationTest extends \PHPUnit\Framework\TestCase
 {
@@ -29,6 +30,7 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
             ->automap()
             ->ignore('ignore')
             ->map(['dateTime' => 'date'])
+            ->custom('dateMutable', new FromProperty('dateImmutable'))
             ->callback('callback', function () {
                 return 'x';
             })
@@ -64,7 +66,7 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
     {
         $errors = (new Configuration(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class, 'X'))
             ->automap()
-            ->ignore('dateTime', 'fixed', 'ignore')
+            ->ignore('dateTime', 'dateMutable', 'fixed', 'ignore')
             ->validate();
 
         $this->assertEmpty($errors);
