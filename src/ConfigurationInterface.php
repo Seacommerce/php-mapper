@@ -3,7 +3,6 @@
 namespace Seacommerce\Mapper;
 
 use Seacommerce\Mapper\Exception\ValidationErrorsException;
-use Seacommerce\Mapper\OperationInterface;
 
 interface ConfigurationInterface
 {
@@ -32,7 +31,18 @@ interface ConfigurationInterface
      */
     public function getTargetProperties(): array;
 
-    public function automap(): ConfigurationInterface;
+    /**
+     * Auto map all unmapped properties.
+     * @return ConfigurationInterface
+     */
+    public function autoMap(): ConfigurationInterface;
+
+    /**
+     * Ignore all properties that have been not been mapped yet.
+     * This is especially useful for testing and should be avoided on production.
+     * @return ConfigurationInterface
+     */
+    public function ignoreUnmapped(): ConfigurationInterface;
 
     /**
      * @param string $property
@@ -58,7 +68,7 @@ interface ConfigurationInterface
     /**
      * @param array $properties
      * @return ConfigurationInterface
-     * @deprecated Use forMember('target', Operations::mapFrom('source')) instead.
+     * @deprecated Use forMember('target', Operations::fromProperty('source')) instead.
      */
     public function map(array $properties): ConfigurationInterface;
 
@@ -66,7 +76,7 @@ interface ConfigurationInterface
      * @param string $property
      * @param callable $callback
      * @return ConfigurationInterface
-     * @deprecated Use forMember('foo', Operations::callback($callable)) instead.
+     * @deprecated Use forMember('foo', Operations::mapFrom($callable)) instead.
      */
     public function callback(string $property, callable $callback): ConfigurationInterface;
 
@@ -74,7 +84,7 @@ interface ConfigurationInterface
      * @param string $property
      * @param $value
      * @return ConfigurationInterface
-     * @deprecated Use forMember('foo', Operations::const($val)) instead.
+     * @deprecated Use forMember('foo', Operations::setTo($val)) instead.
      */
     public function constValue(string $property, $value): ConfigurationInterface;
 
@@ -82,7 +92,7 @@ interface ConfigurationInterface
      * @param string $property
      * @param OperationInterface $operation
      * @return ConfigurationInterface
-     * @deprecated Use forMember('foo', new CustomOperation()) instead.
+     * @deprecated Use forMember('foo', new SomeCustomOperation()) instead.
      */
     public function custom(string $property, OperationInterface $operation): ConfigurationInterface;
 

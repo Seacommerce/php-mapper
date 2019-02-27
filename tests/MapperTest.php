@@ -12,12 +12,14 @@ use Seacommerce\Mapper\Mapper;
 use Seacommerce\Mapper\Operation;
 use Seacommerce\Mapper\Registry;
 use Seacommerce\Mapper\ValueConverter\DateTimeConverter;
+use Seacommerce\Mapper\ValueConverter\DateTimeImmutableConverter;
 
 class MapperTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @throws ClassNotFoundException
      * @throws ConfigurationNotFoundException
+     * @throws \Exception
      */
     public function testMissingConfigurationThrowsException()
     {
@@ -30,6 +32,7 @@ class MapperTest extends \PHPUnit\Framework\TestCase
     /**
      * @throws ClassNotFoundException
      * @throws ConfigurationNotFoundException
+     * @throws \Exception
      */
     public function testNonObjectOrArrayAsSourceThrowsException()
     {
@@ -58,7 +61,7 @@ class MapperTest extends \PHPUnit\Framework\TestCase
     {
         $registry = new Registry();
         $registry->add(Model\PublicFields\Source::class, Model\PublicFields\Target::class)
-            ->automap()
+            ->autoMap()
             ->forMembers(['ignore', 'dateTime', 'callback', 'fixed'], Operation::ignore())
             ->validate();
 
@@ -83,7 +86,7 @@ class MapperTest extends \PHPUnit\Framework\TestCase
     {
         $registry = new Registry();
         $registry->add(Model\PublicFields\Source::class, Model\PublicFields\Target::class)
-            ->automap()
+            ->autoMap()
             ->forMember('ignore', Operation::ignore())
             ->forMember('dateTime', Operation::fromProperty('date'))
             ->forMember('callback', Operation::mapFrom(function () {
@@ -122,9 +125,9 @@ class MapperTest extends \PHPUnit\Framework\TestCase
     {
         $registry = new Registry();
         $registry->add(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class)
-            ->automap()
+            ->autoMap()
             ->allowMapFromSubClass()
-            ->forMember('dateMutable', Operation::fromProperty('dateImmutable')->useConverter(DateTimeConverter::toMutable()))
+            ->forMember('dateMutable', Operation::fromProperty('dateImmutable')->useConverter(DateTimeImmutableConverter::toMutable()))
             ->forMember('ignore', Operation::ignore())
             ->forMember('dateTime', Operation::fromProperty('date'))
             ->forMember('callback', Operation::mapFrom(function () {
@@ -164,10 +167,13 @@ class MapperTest extends \PHPUnit\Framework\TestCase
         $registry = new Registry();
         $registry->add(Model\ValueConverter\Source::class, Model\ValueConverter\Target::class)
             ->forMember('date', Operation::fromProperty('date')->useConverter(DateTimeConverter::toImmutable()))
+            ->forMember('time', Operation::fromProperty('time')->useConverter(DateTimeConverter::fromTimestamp()))
             ->validate();
 
         $source = new Model\ValueConverter\Source();
-        $source->setDate(new DateTime());
+        $source
+            ->setDate(new DateTime())
+            ->setTime((new DateTime())->getTimestamp());
 
         $mapper = new Mapper($registry, new PropertyAccessCompiler('./var/cache'));
         /** @var Model\ValueConverter\Target $target */
@@ -186,11 +192,13 @@ class MapperTest extends \PHPUnit\Framework\TestCase
         $registry = new Registry();
         $registry->registerDefaultValueConverters();
         $registry->add(Model\ValueConverter\Source::class, Model\ValueConverter\Target::class)
-            ->automap()
+            ->autoMap()
             ->validate();
 
         $source = new Model\ValueConverter\Source();
-        $source->setDate(new DateTime());
+        $source
+            ->setDate(new DateTime())
+            ->setTime((new DateTime())->getTimestamp());
 
         $mapper = new Mapper($registry, new PropertyAccessCompiler('./var/cache'));
         /** @var Model\ValueConverter\Target $target */

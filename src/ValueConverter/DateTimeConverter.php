@@ -10,26 +10,39 @@ class DateTimeConverter
     /**
      * @return callable
      */
-    public static function toMutable() : callable
+    public static function toImmutable() : callable
     {
-        return function(?DateTimeImmutable $value) {
+        return function(?DateTime $value) : ?DateTimeImmutable {
             if ($value === null) {
                 return null;
             }
-            return (new DateTime())->setTimezone($value->getTimezone())->setTimestamp($value->getTimestamp());
+            return DateTimeImmutable::createFromMutable($value);
         };
     }
 
     /**
      * @return callable
      */
-    public static function toImmutable() : callable
+    public static function toTimestamp() : callable
     {
-        return function(?DateTime $value) {
+        return function(?DateTime $value) : ?int {
             if ($value === null) {
                 return null;
             }
-            return DateTimeImmutable::createFromMutable($value);
+            return $value->getTimestamp();
+        };
+    }
+
+    /**
+     * @return callable
+     */
+    public static function fromTimestamp() : callable
+    {
+        return function(?int $value) : ?DateTime {
+            if ($value === null) {
+                return null;
+            }
+            return (new DateTime())->setTimestamp($value);
         };
     }
 }

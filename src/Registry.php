@@ -6,6 +6,8 @@ namespace Seacommerce\Mapper;
 use Seacommerce\Mapper\Exception\AggregatedValidationErrorsException;
 use Seacommerce\Mapper\Exception\DuplicateConfigurationException;
 use Seacommerce\Mapper\ValueConverter\DateTimeConverter;
+use Seacommerce\Mapper\ValueConverter\DateTimeImmutableConverter;
+use Seacommerce\Mapper\ValueConverter\ValueConverterInterface;
 
 class Registry implements RegistryInterface
 {
@@ -16,7 +18,7 @@ class Registry implements RegistryInterface
     private $registry = [];
 
     /**
-     * @var callable[][]|ValueConverter\ValueConverterInterface[]
+     * @var callable[][]|ValueConverterInterface[]
      */
     private $valueConverters = [];
 
@@ -109,9 +111,29 @@ class Registry implements RegistryInterface
         return new \ArrayIterator($this->registry);
     }
 
-    public function registerDefaultValueConverters() {
-        $this->valueConverters[\DateTime::class][\DateTimeImmutable::class] = DateTimeConverter::toImmutable();
-        $this->valueConverters[\DateTimeImmutable::class][\DateTime::class] = DateTimeConverter::toMutable();
+    /**
+     * @param string $fromClass
+     * @param string $toClass
+     * @param ValueConverterInterface|callable $converter
+     */
+    public function registerValueConverter(string $fromClass, string $toClass, $converter)
+    {
+        if (!is_callable($converter) && !($converter instanceof ValueConverterInterface)) {
+            throw new \InvalidArgumentException("Invalid type for 'converter'. Expected callable or ValueConverterInterface.");
+        }
+        $this->valueConverters[$fromClass][$toClass] = $converter;
+    }
+
+    public function registerDefaultValueConverters()
+    {
+        $this->registerValueConverter(\DateTime::class, \DateTimeImmutable::class, DateTimeConverter::toImmutable());
+        $this->registerValueConverter(\DateTime::class, 'int', DateTimeConverter::toTimestamp());
+        $this->registerValueConverter('int', \DateTime::class, DateTimeConverter::fromTimestamp());
+
+
+        $this->registerValueConverter(\DateTimeImmutable::class, \DateTime::class, DateTimeImmutableConverter::toMutable());
+        $this->registerValueConverter(\DateTimeImmutable::class, 'int', DateTimeImmutableConverter::toTimestamp());
+        $this->registerValueConverter('int', \DateTimeImmutable::class, DateTimeImmutableConverter::fromTimestamp());
     }
 
     private function getConfigurationKey(string $sourceClass, string $targetClass): string

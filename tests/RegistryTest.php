@@ -40,7 +40,7 @@ class RegistryTest extends \PHPUnit\Framework\TestCase
     {
         $registry = new Registry();
         $registry->add(Model\PublicFields\Source::class, Model\PublicFields\Target::class)
-            ->automap()
+            ->autoMap()
             ->ignore('dateTime', 'fixed', 'ignore');
         $exception = $registry->validate(false);
         $this->assertNull($exception);
@@ -50,7 +50,7 @@ class RegistryTest extends \PHPUnit\Framework\TestCase
     {
         $registry = new Registry();
         $registry->add(Model\PublicFields\Source::class, Model\PublicFields\Target::class)
-            ->automap();
+            ->autoMap();
         $exception = $registry->validate(false);
         $this->assertInstanceOf(AggregatedValidationErrorsException::class, $exception);
     }

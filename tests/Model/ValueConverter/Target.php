@@ -4,10 +4,15 @@
 namespace Seacommerce\Mapper\Test\Model\ValueConverter;
 
 
+use DateTime;
+
 class Target
 {
     /** @var \DateTimeImmutable|null */
     private $date;
+
+    /** @var DateTime|null */
+    private $time;
 
     /**
      * @return \DateTimeImmutable|null
@@ -24,6 +29,24 @@ class Target
     public function setDate(?\DateTimeImmutable $date): Target
     {
         $this->date = $date;
+        return $this;
+    }
+
+    /**
+     * @return DateTime|null
+     */
+    public function getTime(): ?DateTime
+    {
+        return $this->time;
+    }
+
+    /**
+     * @param DateTime|null $time
+     * @return Target
+     */
+    public function setTime(?DateTime $time): Target
+    {
+        $this->time = $time;
         return $this;
     }
 }

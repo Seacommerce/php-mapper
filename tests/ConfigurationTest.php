@@ -13,7 +13,7 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
     public function testPublicFields()
     {
         $errors = (new Configuration(Model\PublicFields\Source::class, Model\PublicFields\Target::class, 'X'))
-            ->automap()
+            ->autoMap()
             ->ignore('ignore')
             ->map(['dateTime' => 'date'])
             ->callback('callback', function () {
@@ -27,7 +27,7 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
     public function testGettersSetters()
     {
         $errors = (new Configuration(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class, 'X'))
-            ->automap()
+            ->autoMap()
             ->ignore('ignore')
             ->map(['dateTime' => 'date'])
             ->custom('dateMutable', new FromProperty('dateImmutable'))
@@ -59,13 +59,13 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
         $this->expectExceptionMessageRegExp("/Missing mapping for property 'fixed'/");
         $this->expectExceptionMessageRegExp("/Missing mapping for property 'ignore'/");
         (new Configuration(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class, 'X'))
-            ->automap()->validate();
+            ->autoMap()->validate();
     }
 
     public function testIgnoredFields()
     {
         $errors = (new Configuration(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class, 'X'))
-            ->automap()
+            ->autoMap()
             ->ignore('dateTime', 'dateMutable', 'fixed', 'ignore')
             ->validate();
 

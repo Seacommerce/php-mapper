@@ -6,6 +6,7 @@ use Seacommerce\Mapper\Exception\ValidationErrorsException;
 use Seacommerce\Mapper\Exception\PropertyNotFoundException;
 use Seacommerce\Mapper\Extractor\DefaultPropertyExtractor;
 use Seacommerce\Mapper\ValueConverter\ValueConverterInterface;
+use Symfony\Component\PropertyInfo\Type;
 
 class Configuration implements ConfigurationInterface
 {
@@ -88,12 +89,22 @@ class Configuration implements ConfigurationInterface
         return $this->targetProperties;
     }
 
-    public function automap(): ConfigurationInterface
+    public function autoMap(): ConfigurationInterface
     {
         $matching = array_keys(array_intersect_key($this->sourceProperties, $this->targetProperties));
         $unmapped = array_diff($matching, array_keys($this->operations));
         foreach ($unmapped as $p) {
             $this->operations[$p] = Operation::fromProperty($p)->useConverter($this->getValueConverter($p, $p));
+        }
+        return $this;
+    }
+
+    public function ignoreUnmapped(): ConfigurationInterface
+    {
+        $matching = array_keys(array_intersect_key($this->sourceProperties, $this->targetProperties));
+        $unmapped = array_diff($matching, array_keys($this->operations));
+        foreach ($unmapped as $p) {
+            $this->operations[$p] = Operation::ignore();
         }
         return $this;
     }
@@ -299,19 +310,24 @@ class Configuration implements ConfigurationInterface
      */
     private function getValueConverter(string $source, string $target)
     {
+        /** @var Type[] $fromTypes */
         $fromTypes = $this->sourceProperties[$source]['types'];
+        /** @var Type[] $toTypes */
         $toTypes = $this->targetProperties[$target]['types'];
-        if (count($fromTypes) !== 1 && count($toTypes) !== 1) {
+        if ($fromTypes !== null && $fromTypes !== null && count($fromTypes) !== 1 && count($toTypes) !== 1) {
             return null;
         }
 
         $fromType = array_shift($fromTypes);
         $toType = array_shift($toTypes);
-        if ($fromType->getClassName() === null || $toType->getClassName() == null) {
-            return null; // Only for classes for now.
+
+        $f = $fromType->getClassName() ?? $fromType->getBuiltinType();
+        $t = $toType->getClassName() ?? $toType->getBuiltinType();
+        if ($f === null || $t === null) {
+            return null;
         }
 
-        $converter = $this->valueConverters[$fromType->getClassName()][$toType->getClassName()] ?? null;
+        $converter = $this->valueConverters[$f][$t] ?? null;
         return $converter;
     }
 }
