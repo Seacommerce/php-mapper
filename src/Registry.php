@@ -5,6 +5,7 @@ namespace Seacommerce\Mapper;
 
 use Seacommerce\Mapper\Exception\AggregatedValidationErrorsException;
 use Seacommerce\Mapper\Exception\DuplicateConfigurationException;
+use Seacommerce\Mapper\ValueConverter\DateTimeConverter;
 
 class Registry implements RegistryInterface
 {
@@ -13,6 +14,11 @@ class Registry implements RegistryInterface
 
     /** @var ConfigurationInterface[] */
     private $registry = [];
+
+    /**
+     * @var callable[][]|ValueConverter\ValueConverterInterface[]
+     */
+    private $valueConverters = [];
 
     /**
      * Registry constructor.
@@ -44,7 +50,7 @@ class Registry implements RegistryInterface
         if (isset($this->registry[$key])) {
             throw new DuplicateConfigurationException($source, $target);
         }
-        $m = new Configuration($source, $target, $this->scope);
+        $m = new Configuration($source, $target, $this->scope, $this->valueConverters);
         $this->registry[$key] = $m;
         return $m;
     }
@@ -101,6 +107,11 @@ class Registry implements RegistryInterface
     public function getIterator()
     {
         return new \ArrayIterator($this->registry);
+    }
+
+    public function registerDefaultValueConverters() {
+        $this->valueConverters[\DateTime::class][\DateTimeImmutable::class] = DateTimeConverter::toImmutable();
+        $this->valueConverters[\DateTimeImmutable::class][\DateTime::class] = DateTimeConverter::toMutable();
     }
 
     private function getConfigurationKey(string $sourceClass, string $targetClass): string

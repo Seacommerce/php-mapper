@@ -59,7 +59,7 @@ class MapperTest extends \PHPUnit\Framework\TestCase
         $registry = new Registry();
         $registry->add(Model\PublicFields\Source::class, Model\PublicFields\Target::class)
             ->automap()
-            ->forMembers(['ignore', 'dateTime',  'callback', 'fixed'], Operation::ignore())
+            ->forMembers(['ignore', 'dateTime', 'callback', 'fixed'], Operation::ignore())
             ->validate();
 
         $mapper = new Mapper($registry, new PropertyAccessCompiler('./var/cache'));
@@ -136,7 +136,6 @@ class MapperTest extends \PHPUnit\Framework\TestCase
 
         $mapper = new Mapper($registry, new PropertyAccessCompiler('./var/cache'));
 
-
         $source = new Model\GettersSetters\SourceSubclass();
         $source->setId(1);
         $source->setName("Sil");
@@ -155,5 +154,50 @@ class MapperTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('x', $target->getCallback());
         $this->assertEquals(100, $target->getFixed());
         $this->assertInstanceOf(DateTime::class, $target->getDateMutable());
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function testValueConverters()
+    {
+        $registry = new Registry();
+        $registry->add(Model\ValueConverter\Source::class, Model\ValueConverter\Target::class)
+            ->forMember('date', Operation::fromProperty('date')->useConverter(DateTimeConverter::toImmutable()))
+            ->validate();
+
+        $source = new Model\ValueConverter\Source();
+        $source->setDate(new DateTime());
+
+        $mapper = new Mapper($registry, new PropertyAccessCompiler('./var/cache'));
+        /** @var Model\ValueConverter\Target $target */
+        $target = $mapper->map($source, Model\ValueConverter\Target::class);
+
+        $this->assertNotNull($target);
+        $this->assertEquals($source->getDate()->getTimestamp(), $target->getDate()->getTimestamp());
+        $this->assertEquals($source->getDate()->getTimezone()->getName(), $target->getDate()->getTimezone()->getName());
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function testDefaultValueConverters()
+    {
+        $registry = new Registry();
+        $registry->registerDefaultValueConverters();
+        $registry->add(Model\ValueConverter\Source::class, Model\ValueConverter\Target::class)
+            ->automap()
+            ->validate();
+
+        $source = new Model\ValueConverter\Source();
+        $source->setDate(new DateTime());
+
+        $mapper = new Mapper($registry, new PropertyAccessCompiler('./var/cache'));
+        /** @var Model\ValueConverter\Target $target */
+        $target = $mapper->map($source, Model\ValueConverter\Target::class);
+
+        $this->assertNotNull($target);
+        $this->assertEquals($source->getDate()->getTimestamp(), $target->getDate()->getTimestamp());
+        $this->assertEquals($source->getDate()->getTimezone()->getName(), $target->getDate()->getTimezone()->getName());
     }
 }

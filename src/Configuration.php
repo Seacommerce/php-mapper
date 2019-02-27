@@ -5,6 +5,7 @@ namespace Seacommerce\Mapper;
 use Seacommerce\Mapper\Exception\ValidationErrorsException;
 use Seacommerce\Mapper\Exception\PropertyNotFoundException;
 use Seacommerce\Mapper\Extractor\DefaultPropertyExtractor;
+use Seacommerce\Mapper\ValueConverter\ValueConverterInterface;
 
 class Configuration implements ConfigurationInterface
 {
@@ -24,21 +25,27 @@ class Configuration implements ConfigurationInterface
     /** @var array */
     private $operations = [];
 
+    /** @var bool */
     private $_allowMapFromSubClass = false;
+
+    /*** @var array */
+    private $valueConverters;
 
     /**
      * Configuration constructor.
      * @param string $sourceClass
      * @param string $targetClass
      * @param string $scope
+     * @param array $valueConverters
      * @throws PropertyNotFoundException
      */
-    public function __construct(string $sourceClass, string $targetClass, string $scope)
+    public function __construct(string $sourceClass, string $targetClass, string $scope, array $valueConverters = [])
     {
         $this->sourceClass = $sourceClass;
         $this->targetClass = $targetClass;
         $this->scope = $scope;
         $this->extractProperties();
+        $this->valueConverters = $valueConverters;
     }
 
     /**
@@ -86,33 +93,39 @@ class Configuration implements ConfigurationInterface
         $matching = array_keys(array_intersect_key($this->sourceProperties, $this->targetProperties));
         $unmapped = array_diff($matching, array_keys($this->operations));
         foreach ($unmapped as $p) {
-            $this->operations[$p] = new FromProperty($p);
+            $this->operations[$p] = Operation::fromProperty($p)->useConverter($this->getValueConverter($p, $p));
         }
         return $this;
     }
 
     /**
      * @param string $property
-     * @param OperationInterface $operation
+     * @param OperationInterface|callable $operation
      * @return ConfigurationInterface
      * @throws \Exception
      */
-    public function forMember(string $property, OperationInterface $operation): ConfigurationInterface {
+    public function forMember(string $property, $operation): ConfigurationInterface
+    {
         $this->ensureTargetProperty($property);
+        if (is_callable($operation)) {
+            $this->operations[$property] = Operation::mapFrom($operation);
+        } else if ($operation instanceof FromProperty && $operation->getConverter() === null) {
+            $operation->useConverter($this->getValueConverter($operation->getFrom(), $property));
+        }
         $this->operations[$property] = $operation;
         return $this;
     }
 
     /**
      * @param array $properties
-     * @param \Seacommerce\Mapper\OperationInterface $operation
+     * @param \Seacommerce\Mapper\OperationInterface|callable $operation
      * @return ConfigurationInterface
      * @throws \Exception
      */
-    public function forMembers(array $properties, OperationInterface $operation): ConfigurationInterface {
+    public function forMembers(array $properties, $operation): ConfigurationInterface
+    {
         foreach ($properties as $p) {
-            $this->ensureTargetProperty($p);
-            $this->operations[$p] = $operation;
+            $this->forMember($p, $operation);
         }
         return $this;
     }
@@ -126,7 +139,7 @@ class Configuration implements ConfigurationInterface
     {
         foreach ($property as $p) {
             $this->ensureTargetProperty($p);
-            $this->operations[$p] = new Ignore();
+            $this->operations[$p] = Operation::ignore();
         }
         return $this;
     }
@@ -141,7 +154,7 @@ class Configuration implements ConfigurationInterface
         foreach ($properties as $t => $s) {
             $this->ensureTargetProperty($t);
             $this->ensureSourceProperty($s);
-            $this->operations[$t] = new FromProperty($s);
+            $this->operations[$t] = Operation::fromProperty($s)->useConverter($this->getValueConverter($s, $t));
         }
         return $this;
     }
@@ -155,7 +168,7 @@ class Configuration implements ConfigurationInterface
     public function callback(string $property, callable $callback): ConfigurationInterface
     {
         $this->ensureTargetProperty($property);
-        $this->operations[$property] = new MapFrom($callback);
+        $this->operations[$property] = Operation::mapFrom($callback);
         return $this;
     }
 
@@ -237,7 +250,6 @@ class Configuration implements ConfigurationInterface
         return $this->_allowMapFromSubClass;
     }
 
-
     /**
      * @throws PropertyNotFoundException
      */
@@ -278,5 +290,28 @@ class Configuration implements ConfigurationInterface
         if (!isset($this->sourceProperties[$property])) {
             throw new PropertyNotFoundException($property, array_keys($this->sourceProperties));
         }
+    }
+
+    /**
+     * @param string $source
+     * @param string $target
+     * @return null|callable|ValueConverterInterface
+     */
+    private function getValueConverter(string $source, string $target)
+    {
+        $fromTypes = $this->sourceProperties[$source]['types'];
+        $toTypes = $this->targetProperties[$target]['types'];
+        if (count($fromTypes) !== 1 && count($toTypes) !== 1) {
+            return null;
+        }
+
+        $fromType = array_shift($fromTypes);
+        $toType = array_shift($toTypes);
+        if ($fromType->getClassName() === null || $toType->getClassName() == null) {
+            return null; // Only for classes for now.
+        }
+
+        $converter = $this->valueConverters[$fromType->getClassName()][$toType->getClassName()] ?? null;
+        return $converter;
     }
 }

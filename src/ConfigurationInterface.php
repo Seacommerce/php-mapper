@@ -34,9 +34,19 @@ interface ConfigurationInterface
 
     public function automap(): ConfigurationInterface;
 
-    public function forMember(string $property, OperationInterface $operation): ConfigurationInterface;
+    /**
+     * @param string $property
+     * @param \Seacommerce\Mapper\OperationInterface|callable $operation
+     * @return ConfigurationInterface
+     */
+    public function forMember(string $property, $operation): ConfigurationInterface;
 
-    public function forMembers(array $properties, OperationInterface $operation): ConfigurationInterface;
+    /**
+     * @param array $properties
+     * @param \Seacommerce\Mapper\OperationInterface|callable $operation
+     * @return ConfigurationInterface
+     */
+    public function forMembers(array $properties, $operation): ConfigurationInterface;
 
     /**
      * @param string ...$property

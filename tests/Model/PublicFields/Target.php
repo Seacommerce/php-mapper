@@ -4,6 +4,8 @@
 namespace Seacommerce\Mapper\Test\Model\PublicFields;
 
 
+use DateTime;
+
 class Target
 {
     /** @var int|null */
