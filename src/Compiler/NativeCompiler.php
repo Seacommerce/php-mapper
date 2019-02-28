@@ -148,7 +148,6 @@ class NativeCompiler implements CompilerInterface
                 if (!file_exists($this->cacheFolder)) {
                     mkdir($this->cacheFolder, 0777, true);
                 }
-                $filePath = realpath($filePath);
                 file_put_contents($filePath, $str);
             }
             require_once $filePath;
