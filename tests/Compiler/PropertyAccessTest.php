@@ -16,7 +16,7 @@ class PropertyAccessTest extends TestCase
     /** @var Standard */
     private static $prettyPrinter;
 
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass() : void
     {
         self::$factory = new BuilderFactory();
         self::$prettyPrinter = new Standard();
