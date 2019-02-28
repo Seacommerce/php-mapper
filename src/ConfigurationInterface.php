@@ -22,12 +22,12 @@ interface ConfigurationInterface
     public function getScope(): string;
 
     /**
-     * @return array
+     * @return Property[]
      */
     public function getSourceProperties();
 
     /**
-     * @return array
+     * @return Property[]
      */
     public function getTargetProperties(): array;
 

@@ -70,7 +70,6 @@ class MapperTest extends \PHPUnit\Framework\TestCase
 
         foreach ($mapper->getRegistry() as $configuration) {
             $className = $mapper->getCompiler()->getMappingFullClassName($configuration);
-            echo $className . PHP_EOL;
             $exists = class_exists($className, false);
             $this->assertTrue($exists);
         }

@@ -6,39 +6,50 @@ namespace Seacommerce\Mapper\Test;
 use Seacommerce\Mapper\Configuration;
 use Seacommerce\Mapper\Exception\PropertyNotFoundException;
 use Seacommerce\Mapper\Exception\ValidationErrorsException;
-use Seacommerce\Mapper\FromProperty;
+use Seacommerce\Mapper\Operation;
 
 class ConfigurationTest extends \PHPUnit\Framework\TestCase
 {
+    /**
+     * @throws PropertyNotFoundException
+     */
     public function testPublicFields()
     {
         $errors = (new Configuration(Model\PublicFields\Source::class, Model\PublicFields\Target::class, 'X'))
             ->autoMap()
-            ->ignore('ignore')
-            ->map(['dateTime' => 'date'])
-            ->callback('callback', function () {
+            ->forMember('ignore', Operation::ignore())
+            ->forMember('dateTime', Operation::fromProperty('date'))
+            ->forMember('dateTime', Operation::ignore())
+            ->forMember('callback', Operation::mapFrom(function () {
                 return 'x';
-            })
-            ->constValue('fixed', 100)
+            }))
+            ->forMember('fixed', Operation::setTo(100))
             ->validate(false);
         $this->assertEmpty($errors);
     }
 
+    /**
+     * @throws PropertyNotFoundException
+     */
     public function testGettersSetters()
     {
         $errors = (new Configuration(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class, 'X'))
             ->autoMap()
-            ->ignore('ignore')
-            ->map(['dateTime' => 'date'])
-            ->custom('dateMutable', new FromProperty('dateImmutable'))
-            ->callback('callback', function () {
+            ->forMember('ignore', Operation::ignore())
+            ->forMember('dateTime', Operation::fromProperty('date'))
+            ->forMember('dateMutable', Operation::fromProperty('dateImmutable'))
+            ->forMember('callback', Operation::mapFrom(function () {
                 return 'x';
-            })
-            ->constValue('fixed', 100)
+            }))
+            ->forMember('fixed', Operation::setTo(100))
             ->validate(false);
         $this->assertEmpty($errors);
     }
 
+    /**
+     * @throws PropertyNotFoundException
+     * @throws ValidationErrorsException
+     */
     public function testEmptyConfiguration()
     {
         $this->expectException(ValidationErrorsException::class);
@@ -52,6 +63,9 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
             ->validate();
     }
 
+    /**
+     * @throws PropertyNotFoundException
+     */
     public function testAutoMap()
     {
         $this->expectException(ValidationErrorsException::class);
@@ -62,16 +76,23 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
             ->autoMap()->validate();
     }
 
+    /**
+     * @throws PropertyNotFoundException
+     */
     public function testIgnoredFields()
     {
         $errors = (new Configuration(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class, 'X'))
             ->autoMap()
-            ->ignore('dateTime', 'dateMutable', 'fixed', 'ignore')
+            ->forMembers(['dateTime', 'dateMutable', 'fixed', 'ignore'], Operation::ignore())
             ->validate();
 
         $this->assertEmpty($errors);
     }
 
+    /**
+     * @throws PropertyNotFoundException
+     * @throws \Exception
+     */
     public function testIgnorePropertyNotFound()
     {
         $this->expectException(PropertyNotFoundException::class);
@@ -79,6 +100,10 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
             ->ignore('nonExisting');
     }
 
+    /**
+     * @throws PropertyNotFoundException
+     * @throws \Exception
+     */
     public function testMapSourcePropertyNotFound()
     {
         $this->expectException(PropertyNotFoundException::class);
@@ -86,6 +111,10 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
             ->map(['dateTime' => 'nonExisting']);
     }
 
+    /**
+     * @throws PropertyNotFoundException
+     * @throws \Exception
+     */
     public function testMapTargetPropertyNotFound()
     {
         $this->expectException(PropertyNotFoundException::class);
@@ -93,12 +122,18 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
             ->map(['nonExisting' => 'date']);
     }
 
+    /**
+     * @throws PropertyNotFoundException
+     */
     public function testPropertyLessSourceClassShouldThrowException()
     {
         $this->expectException(PropertyNotFoundException::class);
         new Configuration(Model\None\Source::class, Model\GettersSetters\Target::class, 'X');
     }
 
+    /**
+     * @throws PropertyNotFoundException
+     */
     public function testPropertyLessTargetClassShouldThrowException()
     {
         $this->expectException(PropertyNotFoundException::class);

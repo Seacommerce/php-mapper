@@ -18,9 +18,9 @@ class Configuration implements ConfigurationInterface
     /*** @var string */
     private $scope;
 
-    /** @var array */
+    /** @var Property[] */
     private $sourceProperties = [];
-    /** @var array */
+    /** @var Property[] */
     private $targetProperties = [];
 
     /** @var array */
@@ -74,7 +74,7 @@ class Configuration implements ConfigurationInterface
     }
 
     /**
-     * @return array
+     * @return Property[]
      */
     public function getSourceProperties(): array
     {
@@ -82,7 +82,7 @@ class Configuration implements ConfigurationInterface
     }
 
     /**
-     * @return array
+     * @return Property[]
      */
     public function getTargetProperties(): array
     {
@@ -311,9 +311,9 @@ class Configuration implements ConfigurationInterface
     private function getValueConverter(string $source, string $target)
     {
         /** @var Type[] $fromTypes */
-        $fromTypes = $this->sourceProperties[$source]['types'];
+        $fromTypes = $this->sourceProperties[$source]->getTypes();
         /** @var Type[] $toTypes */
-        $toTypes = $this->targetProperties[$target]['types'];
+        $toTypes = $this->targetProperties[$target]->getTypes();
         if ($fromTypes !== null && $fromTypes !== null && count($fromTypes) !== 1 && count($toTypes) !== 1) {
             return null;
         }
