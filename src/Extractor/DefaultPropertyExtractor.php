@@ -85,8 +85,8 @@ class DefaultPropertyExtractor implements PropertyExtractorInterface
             list($writeAccessorMethod) = $this->getMutatorMethod($class, $propertyName);
             $types = $this->propertyInfoExtractor->getTypes($class, $propertyName);
             $properties[$propertyName] = new Property($propertyName, $types,
-                new PropertyReadAccessor($readAccessorMethod->getName(), PropertyReadAccessor::ACCESS_TYPE_METHOD),
-                new PropertyWriteAccessor($writeAccessorMethod->getName(), PropertyWriteAccessor::ACCESS_TYPE_METHOD));
+                $readAccessorMethod === null ? null : new PropertyReadAccessor($readAccessorMethod->getName(), PropertyReadAccessor::ACCESS_TYPE_METHOD),
+                $writeAccessorMethod === null ? null : new PropertyWriteAccessor($writeAccessorMethod->getName(), PropertyWriteAccessor::ACCESS_TYPE_METHOD));
         }
         return $properties;
     }
