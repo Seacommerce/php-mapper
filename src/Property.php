@@ -11,7 +11,7 @@ class Property
     /** @var string */
     private $name;
 
-    /** @var Type[] */
+    /** @var Type[]|null */
     private $types;
 
     /** @var PropertyReadAccessor|null */
@@ -27,7 +27,7 @@ class Property
      * @param PropertyReadAccessor|null $readAccessor
      * @param PropertyWriteAccessor|null $writeAccessor
      */
-    public function __construct(string $name, array $types,
+    public function __construct(string $name, ?array $types,
                                 ?PropertyReadAccessor $readAccessor,
                                 ?PropertyWriteAccessor $writeAccessor)
     {
@@ -46,9 +46,9 @@ class Property
     }
 
     /**
-     * @return Type[]
+     * @return Type[]|null
      */
-    public function getTypes(): array
+    public function getTypes(): ?array
     {
         return $this->types;
     }
