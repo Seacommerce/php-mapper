@@ -7,6 +7,7 @@ use Seacommerce\Mapper\Configuration;
 use Seacommerce\Mapper\Exception\PropertyNotFoundException;
 use Seacommerce\Mapper\Exception\ValidationErrorsException;
 use Seacommerce\Mapper\Operation;
+use Seacommerce\Mapper\Registry;
 
 class ConfigurationTest extends \PHPUnit\Framework\TestCase
 {
@@ -138,5 +139,20 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
     {
         $this->expectException(PropertyNotFoundException::class);
         new Configuration(Model\GettersSetters\Source::class, Model\None\Target::class, 'X');
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function testMapFromReadOnlyOrMapFromWriteOnlyShouldThrowValidationException()
+    {
+        $this->expectException(ValidationErrorsException::class);
+        $this->expectExceptionMessageRegExp("/Target property 'ro' is not writable./");
+        $this->expectExceptionMessageRegExp("/Source property 'wo' is not readable/");
+
+        $registry = new Registry();
+        $registry->add(Model\UnReadWritable\Source::class, Model\UnReadWritable\Target::class)
+            ->autoMap()
+            ->validate();
     }
 }

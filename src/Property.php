@@ -14,20 +14,22 @@ class Property
     /** @var Type[] */
     private $types;
 
-    /** @var PropertyReadAccessor */
+    /** @var PropertyReadAccessor|null */
     private $readAccessor;
 
-    /** @var PropertyWriteAccessor */
+    /** @var PropertyWriteAccessor|null */
     private $writeAccessor;
 
     /**
      * Property constructor.
      * @param string $name
      * @param Type[] $types
-     * @param PropertyReadAccessor $readAccessor
-     * @param PropertyWriteAccessor $writeAccessor
+     * @param PropertyReadAccessor|null $readAccessor
+     * @param PropertyWriteAccessor|null $writeAccessor
      */
-    public function __construct(string $name, array $types, PropertyReadAccessor $readAccessor, PropertyWriteAccessor $writeAccessor)
+    public function __construct(string $name, array $types,
+                                ?PropertyReadAccessor $readAccessor,
+                                ?PropertyWriteAccessor $writeAccessor)
     {
         $this->name = $name;
         $this->types = $types;
@@ -52,18 +54,28 @@ class Property
     }
 
     /**
-     * @return PropertyReadAccessor
+     * @return PropertyReadAccessor|null
      */
-    public function getReadAccessor(): PropertyReadAccessor
+    public function getReadAccessor(): ?PropertyReadAccessor
     {
         return $this->readAccessor;
     }
 
     /**
-     * @return PropertyWriteAccessor
+     * @return PropertyWriteAccessor|null
      */
-    public function getWriteAccessor(): PropertyWriteAccessor
+    public function getWriteAccessor(): ?PropertyWriteAccessor
     {
         return $this->writeAccessor;
+    }
+
+    public function isReadable(): bool
+    {
+        return $this->readAccessor !== null;
+    }
+
+    public function isWritable(): bool
+    {
+        return $this->writeAccessor !== null;
     }
 }

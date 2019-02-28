@@ -45,8 +45,8 @@ class Configuration implements ConfigurationInterface
         $this->sourceClass = $sourceClass;
         $this->targetClass = $targetClass;
         $this->scope = $scope;
-        $this->extractProperties();
         $this->valueConverters = $valueConverters;
+        $this->extractProperties();
     }
 
     /**
@@ -235,6 +235,17 @@ class Configuration implements ConfigurationInterface
         foreach ($diff as $property) {
             $errors[] = "Missing mapping for property '{$property}'.";
         }
+        foreach ($this->operations as $property => $operation) {
+            if(!$this->targetProperties[$property]->isWritable()) {
+                $errors[] = "Target property '{$property}' is not writable. Either declare a setter or make the property public.";
+            }
+            if($operation instanceof FromProperty) {
+                if(!$this->sourceProperties[$operation->getFrom()]->isReadable()) {
+                    $errors[] = "Source property '{$operation->getFrom()}' is not readable. Either declare a getter/hasser/isser or make the property public.";
+                }
+            }
+        }
+
         if (empty($errors)) {
             return null;
         }

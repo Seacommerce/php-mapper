@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Seacommerce\Mapper\Test;
 
 use DateTime;
-use Seacommerce\Mapper\Compiler\PropertyAccessCompiler;
+use Seacommerce\Mapper\Compiler\NativeCompiler;
 use Seacommerce\Mapper\Exception\ClassNotFoundException;
 use Seacommerce\Mapper\Exception\ConfigurationNotFoundException;
 use Seacommerce\Mapper\Exception\InvalidArgumentException;
@@ -25,7 +25,7 @@ class MapperTest extends \PHPUnit\Framework\TestCase
     {
         $this->expectException(ConfigurationNotFoundException::class);
         $registry = new Registry();
-        $mapper = new Mapper($registry, new PropertyAccessCompiler('./var/cache'));
+        $mapper = new Mapper($registry, new NativeCompiler('./var/cache'));
         $mapper->map(new Model\PublicFields\Source(), Model\PublicFields\Target::class);
     }
 
@@ -38,19 +38,20 @@ class MapperTest extends \PHPUnit\Framework\TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $registry = new Registry();
-        $mapper = new Mapper($registry, new PropertyAccessCompiler('./var/cache'));
+        $mapper = new Mapper($registry, new NativeCompiler('./var/cache'));
         $mapper->map(1, Model\PublicFields\Target::class);
     }
 
     /**
      * @throws ClassNotFoundException
      * @throws ConfigurationNotFoundException
+     * @throws \Exception
      */
     public function testNonExistingClassNameAsTargetThrowsException()
     {
         $this->expectException(ClassNotFoundException::class);
         $registry = new Registry();
-        $mapper = new Mapper($registry, new PropertyAccessCompiler('./var/cache'));
+        $mapper = new Mapper($registry, new NativeCompiler('./var/cache'));
         $mapper->map(new Model\PublicFields\Source(), 'NonExistingClass');
     }
 
@@ -65,7 +66,7 @@ class MapperTest extends \PHPUnit\Framework\TestCase
             ->forMembers(['ignore', 'dateTime', 'callback', 'fixed'], Operation::ignore())
             ->validate();
 
-        $mapper = new Mapper($registry, new PropertyAccessCompiler('./var/cache'));
+        $mapper = new Mapper($registry, new NativeCompiler('./var/cache'));
         $mapper->compile();
 
         foreach ($mapper->getRegistry() as $configuration) {
@@ -74,7 +75,6 @@ class MapperTest extends \PHPUnit\Framework\TestCase
             $this->assertTrue($exists);
         }
     }
-
 
     /**
      * @throws ClassNotFoundException
@@ -94,7 +94,7 @@ class MapperTest extends \PHPUnit\Framework\TestCase
             ->forMember('fixed', Operation::setTo(100))
             ->validate();
 
-        $mapper = new Mapper($registry, new PropertyAccessCompiler('./var/cache'));
+        $mapper = new Mapper($registry, new NativeCompiler('./var/cache'));
 
 
         $source = new Model\PublicFields\Source();
@@ -136,7 +136,7 @@ class MapperTest extends \PHPUnit\Framework\TestCase
             ->validate();
 
 
-        $mapper = new Mapper($registry, new PropertyAccessCompiler('./var/cache'));
+        $mapper = new Mapper($registry, new NativeCompiler('./var/cache'));
 
         $source = new Model\GettersSetters\SourceSubclass();
         $source->setId(1);
@@ -174,7 +174,7 @@ class MapperTest extends \PHPUnit\Framework\TestCase
             ->setDate(new DateTime())
             ->setTime((new DateTime())->getTimestamp());
 
-        $mapper = new Mapper($registry, new PropertyAccessCompiler('./var/cache'));
+        $mapper = new Mapper($registry, new NativeCompiler('./var/cache'));
         /** @var Model\ValueConverter\Target $target */
         $target = $mapper->map($source, Model\ValueConverter\Target::class);
 
@@ -199,7 +199,7 @@ class MapperTest extends \PHPUnit\Framework\TestCase
             ->setDate(new DateTime())
             ->setTime((new DateTime())->getTimestamp());
 
-        $mapper = new Mapper($registry, new PropertyAccessCompiler('./var/cache'));
+        $mapper = new Mapper($registry, new NativeCompiler('./var/cache'));
         /** @var Model\ValueConverter\Target $target */
         $target = $mapper->map($source, Model\ValueConverter\Target::class);
 
