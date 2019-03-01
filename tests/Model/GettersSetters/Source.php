@@ -24,6 +24,9 @@ class Source
     /** @var string|null */
     private $callback;
 
+    /** @var array|null */
+    private $items;
+
     /**
      * @return int|null
      */
@@ -111,6 +114,24 @@ class Source
     public function setCallback(?string $callback): Source
     {
         $this->callback = $callback;
+        return $this;
+    }
+
+    /**
+     * @return array|null
+     */
+    public function getItems(): ?array
+    {
+        return $this->items;
+    }
+
+    /**
+     * @param array|null $items
+     * @return Source
+     */
+    public function setItems(?array $items): Source
+    {
+        $this->items = $items;
         return $this;
     }
 }

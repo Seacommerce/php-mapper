@@ -269,8 +269,11 @@ class Configuration implements ConfigurationInterface
     {
         $diff = array_keys(array_diff_key($this->targetProperties, $this->operations));
         $errors = [];
-        foreach ($diff as $property) {
-            $errors[] = "Missing mapping for property '{$property}'.";
+        foreach ($diff as $propertyName) {
+            $targetProperty = $this->targetProperties[$propertyName];
+            if ($targetProperty->isWritable()) {
+                $errors[] = "Missing mapping for property '{$propertyName}'.";
+            }
         }
         foreach ($this->operations as $property => $operation) {
             if (!$this->targetProperties[$property]->isWritable()) {

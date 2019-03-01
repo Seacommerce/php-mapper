@@ -29,6 +29,9 @@ class Target
     /** @var string|null */
     private $ignore;
 
+    /** @var array|null */
+    private $items = [];
+
     /**
      * @return int|null
      */
@@ -153,5 +156,39 @@ class Target
     {
         $this->ignore = $ignore;
         return $this;
+    }
+
+
+
+    public function addItem($item) : void {
+        $this->items[] = $item;
+    }
+
+    public function removeItem($item) : void {
+        if (($key = array_search($item, $this->items)) !== false) {
+            unset($this->items[$key]);
+        }
+    }
+
+    /**
+     * @return array|null
+     */
+    public function getItems(): ?array
+    {
+        return $this->items;
+    }
+
+    /**
+     * @param array|null $items
+     * @return Target
+     */
+    public function setItems(?array $items): Target
+    {
+        $this->items = $items;
+        return $this;
+    }
+
+    public function getGetterOnly() : string {
+        return 'Getter';
     }
 }
