@@ -70,9 +70,7 @@ class MapperTest extends \PHPUnit\Framework\TestCase
         $mapper->compile();
 
         foreach ($mapper->getRegistry() as $configuration) {
-            $className = $mapper->getCompiler()->getMappingFullClassName($configuration);
-            $exists = class_exists($className, false);
-            $this->assertTrue($exists);
+            $this->assertTrue(class_exists($configuration->getMapperFullClassName(), false));
         }
     }
 

@@ -16,6 +16,8 @@ class Mapper implements MapperInterface
      */
     private $compiler;
 
+    private $compiled = [];
+
     /**
      * Mapper constructor.
      * @param Registry $registry
@@ -70,7 +72,7 @@ class Mapper implements MapperInterface
             $target = new $target;
         }
 
-        $configuration = $this->registry->get($sourceClass, $targetClass);
+        $configuration = $this->registry->get($sourceClass, $targetClass); // <= 50ms
         if (empty($configuration)) {
             throw new ConfigurationNotFoundException($sourceClass, $targetClass);
         }
@@ -99,11 +101,12 @@ class Mapper implements MapperInterface
 
     private function compileConfiguration(ConfigurationInterface $configuration): string
     {
-        $mappingClassName = $this->compiler->getMappingFullClassName($configuration);
-        if (!class_exists($mappingClassName, false)) {
+        $name = $configuration->getMapperFullClassName();
+        if (!isset($this->compiled[$name])) {
             $this->compiler->compile($configuration);
+            $this->compiled[$name] = true;
         }
-        return $mappingClassName;
+        return $name;
     }
 
     /**
@@ -114,7 +117,8 @@ class Mapper implements MapperInterface
     {
         if (is_array($source)) {
             return 'array';
-        } else if (is_object($source)) {
+        } else
+            if (is_object($source)) {
             return get_class($source);
         }
         throw new InvalidArgumentException($source, "Expected an object, an array or an existing class name.");
@@ -128,14 +132,15 @@ class Mapper implements MapperInterface
     private function validateTarget($source)
     {
         if (is_string($source)) {
-            if ($source == 'array') {
+            if ($source === 'array') {
                 return 'array';
             }
             if (!class_exists($source)) {
                 throw new ClassNotFoundException($source);
             }
             return $source;
-        } elseif (is_object($source)) {
+        } else
+            if (is_object($source)) {
             return get_class($source);
         }
         throw new InvalidArgumentException($source, "Expected an object, an existing class name or 'array'.");
