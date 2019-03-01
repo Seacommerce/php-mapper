@@ -25,9 +25,6 @@ use Seacommerce\Mapper\ValueConverter\ValueConverterInterface;
 class NativeCompiler implements CompilerInterface
 {
     /** @var string|null */
-    private $namespace = 'Mappings';
-
-    /** @var string|null */
     private $cacheFolder;
 
     /**
@@ -37,14 +34,6 @@ class NativeCompiler implements CompilerInterface
     public function __construct(?string $cacheFolder = null)
     {
         $this->cacheFolder = $cacheFolder;
-    }
-
-    /**
-     * @return string|null
-     */
-    public function getNamespace(): ?string
-    {
-        return $this->namespace;
     }
 
     /**
@@ -68,7 +57,7 @@ class NativeCompiler implements CompilerInterface
         $context = new Variable('context');
 
         $getOperation = function (string $property) use ($factory, $context) {
-            return new ArrayDimFetch($factory->methodCall($factory->methodCall($context, 'getConfiguration'), 'getOperations'), $factory->val($property));
+            return $factory->methodCall($factory->methodCall($context, 'getConfiguration'), 'getOperation', [$factory->val($property)]);
         };
 
 
@@ -106,9 +95,9 @@ class NativeCompiler implements CompilerInterface
         }
         $stmts[] = new Return_($target);
 
-        $className = $this->getMappingClassName($configuration);
+        $className = $configuration->getMapperClassName();
         $builder = $factory
-            ->namespace($this->namespace)
+            ->namespace($configuration->getMapperNamespace())
             ->addStmt($factory->use(Context::class))
             ->addStmt($factory->use(MapperInterface::class));
 
@@ -155,19 +144,5 @@ class NativeCompiler implements CompilerInterface
             $str = $prettyPrinter->prettyPrint([$node]) . PHP_EOL;
             eval($str);
         }
-    }
-
-    public function getMappingClassName(ConfigurationInterface $configuration): string
-    {
-        $sourceClass = preg_replace('/\\\\{1}/', '_', $configuration->getSourceClass());
-        $destClass = preg_replace('/\\\\{1}/', '_', $configuration->getTargetClass());
-        $name = "__{$configuration->getScope()}_{$sourceClass}_to_{$destClass}";
-        return $name;
-    }
-
-    public function getMappingFullClassName(ConfigurationInterface $configuration): string
-    {
-        $short = $this->getMappingClassName($configuration);
-        return "{$this->namespace}\\{$short}";
     }
 }

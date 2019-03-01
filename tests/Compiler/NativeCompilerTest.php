@@ -15,8 +15,7 @@ use Seacommerce\Mapper\ValueConverter\DateTimeImmutableConverter;
 class NativeCompilerTest extends TestCase
 {
     /**
-     * @throws \Seacommerce\Mapper\Exception\PropertyNotFoundException
-     * @throws \Seacommerce\Mapper\Exception\ValidationErrorsException
+     * @throws PropertyNotFoundException
      */
     public function testNoCacheShouldEval()
     {
@@ -33,9 +32,8 @@ class NativeCompilerTest extends TestCase
             }))
             ->forMember('fixed', Operation::setTo(100))
             ->validate();
-        $fullClassName = $compiler->getMappingFullClassName($configuration);
         $compiler->compile($configuration);
-        $this->assertTrue(class_exists($fullClassName));
+        $this->assertTrue(class_exists($configuration->getMapperFullClassName()));
     }
 
     /**
@@ -56,8 +54,7 @@ class NativeCompilerTest extends TestCase
             }))
             ->forMember('fixed', Operation::setTo(100))
             ->validate();
-        $fullClassName = $compiler->getMappingFullClassName($configuration);
         $compiler->compile($configuration);
-        $this->assertTrue(class_exists($fullClassName));
+        $this->assertTrue(class_exists($configuration->getMapperFullClassName()));
     }
 }

@@ -20,7 +20,18 @@ interface ConfigurationInterface
      * @return string
      */
     public function getScope(): string;
-
+    /**
+     * @return string
+     */
+    public function getMapperClassName(): string;
+    /**
+     * @return string
+     */
+    public function getMapperFullClassName(): string;
+    /**
+     * @return string
+     */
+    public function getMapperNamespace(): string;
     /**
      * @return Property[]
      */
@@ -98,7 +109,9 @@ interface ConfigurationInterface
 
     public function validate(bool $throw = true): ?ValidationErrorsException;
 
-    public  function getOperations() : array;
+    public function getOperations() : array;
+
+    public function getOperation(string $property) : ?OperationInterface;
 
     public function getAllowMapFromSubClass();
 

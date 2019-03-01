@@ -32,6 +32,14 @@ class Configuration implements ConfigurationInterface
     /*** @var array */
     private $valueConverters;
 
+    /** @var string */
+    private $mapperClassName;
+    /** @var string */
+    private $mapperFullClassName;
+
+    /** @var string */
+    private $mapperNamespace = 'Mappings';
+
     /**
      * Configuration constructor.
      * @param string $sourceClass
@@ -47,6 +55,11 @@ class Configuration implements ConfigurationInterface
         $this->scope = $scope;
         $this->valueConverters = $valueConverters;
         $this->extractProperties();
+
+        $sourceClass = preg_replace('/\\\\{1}/', '_', $sourceClass);
+        $destClass = preg_replace('/\\\\{1}/', '_', $targetClass);
+        $this->mapperClassName = "__{$scope}_{$sourceClass}_to_{$destClass}";
+        $this->mapperFullClassName = "{$this->mapperNamespace}\\{$this->mapperClassName}";
     }
 
     /**
@@ -71,6 +84,30 @@ class Configuration implements ConfigurationInterface
     public function getScope(): string
     {
         return $this->scope;
+    }
+
+    /**
+     * @return string
+     */
+    public function getMapperClassName(): string
+    {
+        return $this->mapperClassName;
+    }
+
+    /**
+     * @return string
+     */
+    public function getMapperFullClassName(): string
+    {
+        return $this->mapperFullClassName;
+    }
+
+    /**
+     * @return string
+     */
+    public function getMapperNamespace(): string
+    {
+        return $this->mapperNamespace;
     }
 
     /**
@@ -236,11 +273,11 @@ class Configuration implements ConfigurationInterface
             $errors[] = "Missing mapping for property '{$property}'.";
         }
         foreach ($this->operations as $property => $operation) {
-            if(!$this->targetProperties[$property]->isWritable()) {
+            if (!$this->targetProperties[$property]->isWritable()) {
                 $errors[] = "Target property '{$property}' is not writable. Either declare a setter or make the property public.";
             }
-            if($operation instanceof FromProperty) {
-                if(!$this->sourceProperties[$operation->getFrom()]->isReadable()) {
+            if ($operation instanceof FromProperty) {
+                if (!$this->sourceProperties[$operation->getFrom()]->isReadable()) {
                     $errors[] = "Source property '{$operation->getFrom()}' is not readable. Either declare a getter/hasser/isser or make the property public.";
                 }
             }
@@ -259,6 +296,11 @@ class Configuration implements ConfigurationInterface
     public function getOperations(): array
     {
         return $this->operations;
+    }
+
+    public function getOperation(string $property): ?OperationInterface
+    {
+        return $this->operations[$property];
     }
 
     public function allowMapFromSubClass(bool $allow = true): ConfigurationInterface
