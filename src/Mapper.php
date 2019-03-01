@@ -13,11 +13,7 @@ class Mapper implements MapperInterface
 {
     /** @var RegistryInterface */
     private $registry;
-
-    private $compiled = [];
-    /**
-     * @var LoaderInterface
-     */
+    /*** @var LoaderInterface */
     private $loader;
 
     /**
@@ -102,10 +98,8 @@ class Mapper implements MapperInterface
     private function createMapper(ConfigurationInterface $configuration): AbstractMapper
     {
         $name = $configuration->getMapperFullClassName();
-        $hash = $configuration->getHash();
-        if (!isset($this->compiled[$name]) || $this->compiled[$name] !== $hash) {
+        if (!class_exists($name)) {
             $this->loader->load($configuration);
-            $this->compiled[$name] = $hash;
         }
         $class = $configuration->getMapperFullClassName();
         /** @var AbstractMapper $mapper */
