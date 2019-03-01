@@ -1,13 +1,6 @@
 <?php
 
 namespace Seacommerce\Mapper;
-
-use Seacommerce\Mapper\Exception\ValidationErrorsException;
-use Seacommerce\Mapper\Exception\PropertyNotFoundException;
-use Seacommerce\Mapper\Extractor\DefaultPropertyExtractor;
-use Seacommerce\Mapper\ValueConverter\ValueConverterInterface;
-use Symfony\Component\PropertyInfo\Type;
-
 class Configuration implements ConfigurationInterface
 {
     /*** @var string */
@@ -17,12 +10,7 @@ class Configuration implements ConfigurationInterface
     /*** @var string */
     private $scope;
 
-    /** @var Property[] */
-    private $sourceProperties = [];
-    /** @var Property[] */
-    private $targetProperties = [];
-
-    /** @var array */
+    /** @var OperationInterface[] */
     private $operations = [];
 
     /** @var bool */
@@ -58,9 +46,10 @@ class Configuration implements ConfigurationInterface
         $this->targetClass = $targetClass;
         $this->scope = $scope;
         $this->valueConverters = $valueConverters;
-        $sourceClass = preg_replace('/\\\\{1}/', '_', $sourceClass);
-        $destClass = preg_replace('/\\\\{1}/', '_', $targetClass);
-        $this->mapperClassName = "__{$scope}_{$sourceClass}_to_{$destClass}";
+
+        $sourceClassNormalized = preg_replace('/\\\\{1}/', '_', $sourceClass);
+        $destClassNormalized = preg_replace('/\\\\{1}/', '_', $targetClass);
+        $this->mapperClassName = "__{$scope}_{$sourceClassNormalized}_to_{$destClassNormalized}";
         $this->mapperFullClassName = "{$this->mapperNamespace}\\{$this->mapperClassName}";
     }
 
@@ -112,30 +101,9 @@ class Configuration implements ConfigurationInterface
         return $this->mapperNamespace;
     }
 
-    /**
-     * @return Property[]
-     */
-    public function getSourceProperties(): array
-    {
-        return $this->sourceProperties;
-    }
-
-    /**
-     * @return Property[]
-     */
-    public function getTargetProperties(): array
-    {
-        return $this->targetProperties;
-    }
-
     public function getOperations(): array
     {
         return $this->operations;
-    }
-
-    public function getOperation(string $property): ?OperationInterface
-    {
-        return $this->operations[$property];
     }
 
     public function allowMapFromSubClass(bool $allow = true): ConfigurationInterface
@@ -149,16 +117,56 @@ class Configuration implements ConfigurationInterface
         return $this->_allowMapFromSubClass;
     }
 
+    /**
+     * @return string
+     * @throws \ReflectionException
+     */
+    public function getHash(): string
+    {
+        $hash = '';
+        if (!\in_array($this->sourceClass, ['array', \stdClass::class], true)) {
+            $reflection = new \ReflectionClass($this->sourceClass);
+            $hash .= filemtime($reflection->getFileName());
+        }
+        if (!\in_array($this->targetClass, ['array', \stdClass::class], true)) {
+            $reflection = new \ReflectionClass($this->targetClass);
+            $hash .= filemtime($reflection->getFileName());
+        }
+        $all = [$hash];
+        foreach ($this->operations as $property => $operation) {
+            $all[$property] = $operation->getHash();
+        }
+        $s = serialize($all);
+        $md5 = md5($s);
+        return $md5;
+    }
+
     public function autoMap(): ConfigurationInterface
     {
         $this->_autoMap = true;
         return $this;
     }
 
+    /**
+     * @return bool
+     */
+    public function getAutoMap(): bool
+    {
+        return $this->_autoMap;
+    }
+
     public function ignoreUnmapped(): ConfigurationInterface
     {
         $this->_ignoreUnmapped = true;
         return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getIgnoreUnmapped(): bool
+    {
+        return $this->_ignoreUnmapped;
     }
 
     /**
@@ -191,81 +199,11 @@ class Configuration implements ConfigurationInterface
     }
 
     /**
-     * @param bool $throw
-     * @return ValidationErrorsException
-     * @throws ValidationErrorsException
-     * @throws PropertyNotFoundException
+     * @return PreparedConfiguration
      */
-    public function validate(bool $throw = true): ?ValidationErrorsException
+    public function prepare(): PreparedConfiguration
     {
-        $this->extractProperties();
-        if ($this->_autoMap) {
-            $matching = array_keys(array_intersect_key($this->sourceProperties, $this->targetProperties));
-            $unmapped = array_diff($matching, array_keys($this->operations));
-            foreach ($unmapped as $p) {
-                $this->operations[$p] = Operation::fromProperty($p);
-            }
-        }
-        if ($this->_ignoreUnmapped) {
-            $unmapped = array_diff(array_keys($this->targetProperties), array_keys($this->operations));
-            foreach ($unmapped as $p) {
-                $this->operations[$p] = Operation::ignore();
-            }
-        }
-
-        $unmapped = array_keys(array_diff_key($this->targetProperties, $this->operations));
-        $errors = [];
-        foreach ($unmapped as $propertyName) {
-            $targetProperty = $this->targetProperties[$propertyName];
-            if ($targetProperty->isWritable()) {
-                $errors[] = "Missing mapping for property '{$propertyName}'.";
-            }
-        }
-        foreach ($this->operations as $property => $operation) {
-            if (!isset($this->targetProperties[$property])) {
-                throw new PropertyNotFoundException($property, array_keys($this->targetProperties));
-            }
-
-            if (!$this->targetProperties[$property]->isWritable()) {
-                $errors[] = "Target property '{$property}' is not writable. Either declare a setter or make the property public.";
-            }
-            if ($operation instanceof FromProperty) {
-                if (!isset($this->sourceProperties[$operation->getFrom()])) {
-                    throw new PropertyNotFoundException($property, array_keys($this->sourceProperties));
-                }
-
-                if (!$this->sourceProperties[$operation->getFrom()]->isReadable()) {
-                    $errors[] = "Source property '{$operation->getFrom()}' is not readable. Either declare a getter/hasser/isser or make the property public.";
-                }
-            }
-        }
-
-        if (empty($errors)) {
-            return null;
-        }
-        $ex = new ValidationErrorsException($this->sourceClass, $this->targetClass, $errors);
-        if ($throw) {
-            throw $ex;
-        }
-        return $ex;
-    }
-
-    /**
-     * @throws PropertyNotFoundException
-     */
-    private function extractProperties(): void
-    {
-        $extractor = new DefaultPropertyExtractor();
-        $s = $extractor->getProperties($this->sourceClass);
-        $t = $extractor->getProperties($this->targetClass);
-        if (empty($s)) {
-            throw new PropertyNotFoundException('*any*', []);
-        }
-        if (empty($t)) {
-            throw new PropertyNotFoundException('*any*', []);
-        }
-        $this->sourceProperties = $s;
-        $this->targetProperties = $t;
+        return new PreparedConfiguration($this);
     }
 
 //    /**

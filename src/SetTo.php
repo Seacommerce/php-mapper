@@ -2,8 +2,6 @@
 
 namespace Seacommerce\Mapper;
 
-use Seacommerce\Mapper\OperationInterface;
-
 class SetTo implements OperationInterface
 {
     /** @var mixed */
@@ -24,5 +22,10 @@ class SetTo implements OperationInterface
     public function getValue()
     {
         return $this->value;
+    }
+
+    public function getHash(): array
+    {
+        return [self::class];
     }
 }

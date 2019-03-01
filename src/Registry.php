@@ -85,12 +85,14 @@ class Registry implements RegistryInterface
      * @param bool $throw
      * @return AggregatedValidationErrorsException|null
      * @throws AggregatedValidationErrorsException
+     * @throws Exception\PropertyNotFoundException
+     * @throws Exception\ValidationErrorsException
      */
     public function validate(bool $throw = true): ?AggregatedValidationErrorsException
     {
         $all = [];
         foreach ($this->registry as $key => $config) {
-            $all[] = $config->validate(false);
+            $all[] = $config->prepare()->validate(false);
         }
         $all = array_filter($all);
         if (empty($all)) {
@@ -104,7 +106,7 @@ class Registry implements RegistryInterface
     }
 
     /**
-     * @inheritdoc
+     * @return \ArrayIterator[Configuration]
      */
     public function getIterator()
     {

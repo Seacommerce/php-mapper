@@ -7,7 +7,6 @@ class PropertyWriteAccessor
 {
     public const ACCESS_TYPE_PROPERTY = 1;
     public const ACCESS_TYPE_METHOD = 2;
-    public const ACCESS_TYPE_MAGIC = 3;
 
     /**
      * @var string

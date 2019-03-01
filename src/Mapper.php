@@ -2,53 +2,50 @@
 
 namespace Seacommerce\Mapper;
 
-use Seacommerce\Mapper\Compiler\CompilerInterface;
+use Seacommerce\Mapper\Compiler\LoaderInterface;
 use Seacommerce\Mapper\Exception\ClassNotFoundException;
 use Seacommerce\Mapper\Exception\ConfigurationNotFoundException;
 use Seacommerce\Mapper\Exception\InvalidArgumentException;
+use Seacommerce\Mapper\Exception\PropertyNotFoundException;
+use Seacommerce\Mapper\Extractor\DefaultPropertyExtractor;
 
 class Mapper implements MapperInterface
 {
-    /** @var Registry */
+    /** @var RegistryInterface */
     private $registry;
-    /**
-     * @var CompilerInterface
-     */
-    private $compiler;
 
     private $compiled = [];
+    /**
+     * @var LoaderInterface
+     */
+    private $loader;
 
     /**
      * Mapper constructor.
-     * @param Registry $registry
-     * @param CompilerInterface $compiler
+     * @param RegistryInterface $registry
+     * @param LoaderInterface $loader
      */
-    public function __construct(Registry $registry, CompilerInterface $compiler)
+    public function __construct(RegistryInterface $registry,
+                                LoaderInterface $loader)
     {
         $this->registry = $registry;
-        $this->compiler = $compiler;
+        $this->loader = $loader;
     }
 
     /**
-     * @return Registry
+     * @return RegistryInterface
      */
-    public function getRegistry(): Registry
+    public function getRegistry(): RegistryInterface
     {
         return $this->registry;
     }
 
     /**
-     * @return CompilerInterface
      */
-    public function getCompiler(): CompilerInterface
-    {
-        return $this->compiler;
-    }
-
     public function compile(): void
     {
         foreach ($this->registry as $configuration) {
-            $this->compileConfiguration($configuration);
+            $this->createMapper($configuration);
         }
     }
 
@@ -72,14 +69,13 @@ class Mapper implements MapperInterface
             $target = new $target;
         }
 
-        $configuration = $this->registry->get($sourceClass, $targetClass); // <= 50ms
+        $configuration = $this->registry->get($sourceClass, $targetClass);
         if (empty($configuration)) {
             throw new ConfigurationNotFoundException($sourceClass, $targetClass);
         }
-        $className = $this->compileConfiguration($configuration);
-        $mapping = new $className;
+        $mapper = $this->createMapper($configuration);
         $context = new Context($this->registry, $configuration, $bag ?? []);
-        return $mapping->map($source, $target, $this, $context);
+        return $mapper->map($source, $target, $this, $context);
     }
 
     /**
@@ -99,14 +95,24 @@ class Mapper implements MapperInterface
         return $list;
     }
 
-    private function compileConfiguration(ConfigurationInterface $configuration): string
+    /**
+     * @param ConfigurationInterface $configuration
+     * @return AbstractMapper
+     */
+    private function createMapper(ConfigurationInterface $configuration): AbstractMapper
     {
         $name = $configuration->getMapperFullClassName();
-        if (!isset($this->compiled[$name])) {
-            $this->compiler->compile($configuration);
-            $this->compiled[$name] = true;
+        $hash = $configuration->getHash();
+        if (!isset($this->compiled[$name]) || $this->compiled[$name] !== $hash) {
+            $this->loader->load($configuration);
+            $this->compiled[$name] = $hash;
         }
-        return $name;
+        $class = $configuration->getMapperFullClassName();
+        /** @var AbstractMapper $mapper */
+        $mapper = new $class;
+        $mapper->setOperations($configuration->getOperations());
+
+        return $mapper;
     }
 
     /**
@@ -119,8 +125,8 @@ class Mapper implements MapperInterface
             return 'array';
         } else
             if (is_object($source)) {
-            return get_class($source);
-        }
+                return get_class($source);
+            }
         throw new InvalidArgumentException($source, "Expected an object, an array or an existing class name.");
     }
 
@@ -141,8 +147,8 @@ class Mapper implements MapperInterface
             return $source;
         } else
             if (is_object($source)) {
-            return get_class($source);
-        }
+                return get_class($source);
+            }
         throw new InvalidArgumentException($source, "Expected an object, an existing class name or 'array'.");
     }
 }

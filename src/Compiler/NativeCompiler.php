@@ -4,7 +4,6 @@ namespace Seacommerce\Mapper\Compiler;
 
 use PhpParser\BuilderFactory;
 use PhpParser\Comment\Doc;
-use PhpParser\Node\Expr\ArrayDimFetch;
 use PhpParser\Node\Expr\BinaryOp\Identical;
 use PhpParser\Node\Expr\ConstFetch;
 use PhpParser\Node\Expr\Variable;
@@ -12,7 +11,8 @@ use PhpParser\Node\Name;
 use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\Nop;
 use PhpParser\Node\Stmt\Return_;
-use PhpParser\PrettyPrinter;
+use PhpParser\Node;
+use Seacommerce\Mapper\AbstractMapper;
 use Seacommerce\Mapper\ConfigurationInterface;
 use Seacommerce\Mapper\Context;
 use Seacommerce\Mapper\MapperInterface;
@@ -24,48 +24,37 @@ use Seacommerce\Mapper\ValueConverter\ValueConverterInterface;
 
 class NativeCompiler implements CompilerInterface
 {
-    /** @var string|null */
-    private $cacheFolder;
-
     /**
-     * Compiler constructor.
-     * @param string $cacheFolder
+     * @param ConfigurationInterface $configuration
+     * @return Node
+     * @throws \Seacommerce\Mapper\Exception\PropertyNotFoundException
+     * @throws \Seacommerce\Mapper\Exception\ValidationErrorsException
      */
-    public function __construct(?string $cacheFolder = null)
-    {
-        $this->cacheFolder = $cacheFolder;
-    }
-
-    /**
-     * @return string|null
-     */
-    public function getCacheFolder(): ?string
-    {
-        return $this->cacheFolder;
-    }
-
-    public function compile(ConfigurationInterface $configuration): void
+    public function compile(ConfigurationInterface $configuration): Node
     {
         static $factory = null;
-        static $prettyPrinter = null;
         if ($factory == null) $factory = new BuilderFactory();
-        if ($prettyPrinter == null) $prettyPrinter = new PrettyPrinter\Standard();
+
+        $prepared = $configuration->prepare();
+        $prepared->validate();
+
+        $thisMapper = new Variable('this');
 
         $source = new Variable('source');
+
         $target = new Variable('target');
         $mapper = new Variable('mapper');
         $context = new Variable('context');
 
-        $getOperation = function (string $property) use ($factory, $context) {
-            return $factory->methodCall($factory->methodCall($context, 'getConfiguration'), 'getOperation', [$factory->val($property)]);
+        $getOperation = function (string $property) use ($factory, $thisMapper, $context) {
+            return $factory->methodCall($thisMapper, 'getOperation', [$factory->val($property)]);
         };
 
-
-        $sourceProperties = $configuration->getSourceProperties();
-        $targetProperties = $configuration->getTargetProperties();
+        $sourceProperties = $prepared->getSourceProperties();
+        $targetProperties = $prepared->getTargetProperties();
 
         $stmts[] = new If_(new Identical(new ConstFetch(new Name('null')), $source), ['stmts' => [new Return_($source)]]);
-        foreach ($configuration->getOperations() as $property => $operation) {
+        foreach ($prepared->getOperations() as $property => $operation) {
             if ($operation instanceof MapFrom) {
                 $read = $factory->funcCall($factory->methodCall($getOperation($property), 'getCallback'), [
                     $factory->val($property), $source, $target, $mapper, $context
@@ -104,6 +93,7 @@ class NativeCompiler implements CompilerInterface
         if ($configuration->getSourceClass() === 'array') {
             $sourceType = 'array';
         } else {
+//            $sourceType = $configuration->getSourceClass();
             $sourceType = 'S';
             $builder->addStmt($factory->use($configuration->getSourceClass())->as($sourceType));
 
@@ -111,16 +101,18 @@ class NativeCompiler implements CompilerInterface
         if ($configuration->getTargetClass() === 'array') {
             $targetType = 'array';
         } else {
+//            $targetType = $configuration->getTargetClass();
             $targetType = 'T';
             $builder->addStmt($factory->use($configuration->getTargetClass())->as($targetType));
         }
         $builder
             ->addStmt($factory->class($className)
                 ->makeFinal()
+                ->extend(new Name\FullyQualified(AbstractMapper::class))
                 ->addStmt($factory->method('map')
                     ->makePublic()
                     ->makeFinal()
-                    ->addParam($factory->param($source->name)->setType("?{$sourceType}"))
+                    ->addParam($factory->param($source->name)->setType(new Node\NullableType($sourceType)))
                     ->addParam($factory->param($target->name)->setType($targetType))
                     ->addParam($factory->param($mapper->name)->setType('MapperInterface'))
                     ->addParam($factory->param($context->name)->setType('Context'))
@@ -129,20 +121,6 @@ class NativeCompiler implements CompilerInterface
             );
 
         $node = $builder->getNode();
-
-        if (!empty($this->cacheFolder)) {
-            $str = $prettyPrinter->prettyPrintFile([$node]) . PHP_EOL;
-            $filePath = $this->cacheFolder . '/' . $className . '.php';
-            if (!empty($this->cacheFolder)) {
-                if (!file_exists($this->cacheFolder)) {
-                    mkdir($this->cacheFolder, 0777, true);
-                }
-                file_put_contents($filePath, $str);
-            }
-            require_once $filePath;
-        } else {
-            $str = $prettyPrinter->prettyPrint([$node]) . PHP_EOL;
-            eval($str);
-        }
+        return $node;
     }
 }

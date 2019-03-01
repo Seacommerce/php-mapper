@@ -2,10 +2,6 @@
 
 namespace Seacommerce\Mapper;
 
-use Seacommerce\Mapper\Exception\ValidationErrorsException;
-
-
-
 interface ConfigurationInterface
 {
     /**
@@ -34,15 +30,11 @@ interface ConfigurationInterface
      * @return string
      */
     public function getMapperNamespace(): string;
-    /**
-     * @return Property[]
-     */
-    public function getSourceProperties();
 
     /**
-     * @return Property[]
+     * @return string
      */
-    public function getTargetProperties(): array;
+    public function getHash(): string;
 
     /**
      * Auto map all unmapped properties.
@@ -50,12 +42,16 @@ interface ConfigurationInterface
      */
     public function autoMap(): ConfigurationInterface;
 
+    public function getAutoMap(): bool;
+
     /**
      * Ignore all properties that have been not been mapped yet.
      * This is especially useful for testing and should be avoided on production.
      * @return ConfigurationInterface
      */
     public function ignoreUnmapped(): ConfigurationInterface;
+
+    public function getIgnoreUnmapped(): bool;
 
     /**
      * @param string $property
@@ -71,13 +67,11 @@ interface ConfigurationInterface
      */
     public function forMembers(array $properties, $operation): ConfigurationInterface;
 
-    public function validate(bool $throw = true): ?ValidationErrorsException;
-
     public function getOperations() : array;
-
-    public function getOperation(string $property) : ?OperationInterface;
 
     public function getAllowMapFromSubClass();
 
     public function allowMapFromSubClass(bool $allow = true): ConfigurationInterface;
+
+    public function prepare(): PreparedConfiguration;
 }

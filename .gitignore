@@ -1,6 +1,7 @@
 vendor/
 var/
 output/
+cache/
 
 .env
 .idea/

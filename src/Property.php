@@ -27,7 +27,8 @@ class Property
      * @param PropertyReadAccessor|null $readAccessor
      * @param PropertyWriteAccessor|null $writeAccessor
      */
-    public function __construct(string $name, ?array $types,
+    public function __construct(string $name,
+                                ?array $types,
                                 ?PropertyReadAccessor $readAccessor,
                                 ?PropertyWriteAccessor $writeAccessor)
     {
