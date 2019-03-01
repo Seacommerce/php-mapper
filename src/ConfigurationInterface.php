@@ -5,6 +5,16 @@ namespace Seacommerce\Mapper;
 interface ConfigurationInterface
 {
     /**
+     * @return RegistryInterface|null
+     */
+    public function getRegistry(): ?RegistryInterface;
+
+    /**
+     * @param RegistryInterface|null $registry
+     */
+    public function setRegistry(?RegistryInterface $registry): void;
+
+    /**
      * @return string
      */
     public function getSourceClass(): string;
@@ -18,14 +28,17 @@ interface ConfigurationInterface
      * @return string
      */
     public function getScope(): string;
+
     /**
      * @return string
      */
     public function getMapperClassName(): string;
+
     /**
      * @return string
      */
     public function getMapperFullClassName(): string;
+
     /**
      * @return string
      */
@@ -67,7 +80,7 @@ interface ConfigurationInterface
      */
     public function forMembers(array $properties, $operation): ConfigurationInterface;
 
-    public function getOperations() : array;
+    public function getOperations(): array;
 
     public function getAllowMapFromSubClass();
 

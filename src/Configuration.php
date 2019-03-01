@@ -3,6 +3,8 @@
 namespace Seacommerce\Mapper;
 class Configuration implements ConfigurationInterface
 {
+    /** @var RegistryInterface */
+    private $registry;
     /*** @var string */
     private $sourceClass;
     /*** @var string */
@@ -33,6 +35,7 @@ class Configuration implements ConfigurationInterface
     /** @var string */
     private $mapperNamespace = 'Mappings';
 
+
     /**
      * Configuration constructor.
      * @param string $sourceClass
@@ -51,6 +54,21 @@ class Configuration implements ConfigurationInterface
         $destClassNormalized = preg_replace('/\\\\{1}/', '_', $targetClass);
         $this->mapperClassName = "__{$scope}_{$sourceClassNormalized}_to_{$destClassNormalized}";
         $this->mapperFullClassName = "{$this->mapperNamespace}\\{$this->mapperClassName}";
+    }
+
+    /**
+     * @return RegistryInterface|null
+     */
+    public function getRegistry() : ?RegistryInterface {
+        return $this->registry;
+    }
+
+    /**
+     * @param RegistryInterface|null $registry
+     */
+    public function setRegistry(?RegistryInterface $registry): void
+    {
+        $this->registry = $registry;
     }
 
     /**

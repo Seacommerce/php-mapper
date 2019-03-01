@@ -8,12 +8,24 @@ use Seacommerce\Mapper\Compiler\EvalLoader;
 use Seacommerce\Mapper\Compiler\NativeCompiler;
 use Seacommerce\Mapper\Configuration;
 use Seacommerce\Mapper\Operation;
+use Symfony\Component\Filesystem\Filesystem;
 
 class LoaderTest extends \PHPUnit\Framework\TestCase
 {
+    private static $cacheDir;
+
+    /**
+     * @throws \ReflectionException
+     */
+    public static function setUpBeforeClass(): void
+    {
+        self::$cacheDir = __DIR__ . '/../../cache/' . (new \ReflectionClass(__CLASS__))->getShortName();
+        (new Filesystem())->remove(self::$cacheDir);
+    }
+
     public function testConfigurationHashShouldBeDeterministic()
     {
-        $configuration = (new Configuration(\Seacommerce\Mapper\Test\Model\PublicFields\Source::class, \Seacommerce\Mapper\Test\Model\PublicFields\Target::class, 'testConfigurationHashShouldBeDeterministic'))
+        $configuration = (new Configuration(\Seacommerce\Mapper\Test\Model\PublicFields\Source::class, \Seacommerce\Mapper\Test\Model\PublicFields\Target::class, __FUNCTION__))
             ->autoMap()
             ->forMember('ignore', Operation::ignore())
             ->forMember('dateTime', Operation::fromProperty('date'))
@@ -28,7 +40,7 @@ class LoaderTest extends \PHPUnit\Framework\TestCase
 
     public function testLoadWithoutCache()
     {
-        $configuration = (new Configuration(\Seacommerce\Mapper\Test\Model\PublicFields\Source::class, \Seacommerce\Mapper\Test\Model\PublicFields\Target::class, 'testLoadWithoutCache'))
+        $configuration = (new Configuration(\Seacommerce\Mapper\Test\Model\PublicFields\Source::class, \Seacommerce\Mapper\Test\Model\PublicFields\Target::class, __FUNCTION__))
             ->autoMap()
             ->forMember('ignore', Operation::ignore())
             ->forMember('dateTime', Operation::fromProperty('date'))
@@ -44,7 +56,7 @@ class LoaderTest extends \PHPUnit\Framework\TestCase
 
     public function testLoadWithCache()
     {
-        $configuration = (new Configuration(\Seacommerce\Mapper\Test\Model\PublicFields\Source::class, \Seacommerce\Mapper\Test\Model\PublicFields\Target::class, 'testLoadWithCache'))
+        $configuration = (new Configuration(\Seacommerce\Mapper\Test\Model\PublicFields\Source::class, \Seacommerce\Mapper\Test\Model\PublicFields\Target::class, __FUNCTION__))
             ->autoMap()
             ->forMember('ignore', Operation::ignore())
             ->forMember('dateTime', Operation::fromProperty('date'))
@@ -54,7 +66,7 @@ class LoaderTest extends \PHPUnit\Framework\TestCase
             }))
             ->forMember('fixed', Operation::setTo(100));
         $compiler = new NativeCompiler();
-        $loader = new CachedLoader($compiler, __DIR__ . '/../../cache');
+        $loader = new CachedLoader($compiler, self::$cacheDir);
         $loader->warmup($configuration);
         $loader->load($configuration);
         $this->assertTrue(class_exists($configuration->getMapperFullClassName()));

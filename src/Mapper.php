@@ -110,8 +110,8 @@ class Mapper implements MapperInterface
         $class = $configuration->getMapperFullClassName();
         /** @var AbstractMapper $mapper */
         $mapper = new $class;
+        $mapper->setRegistry($configuration->getRegistry());
         $mapper->setOperations($configuration->getOperations());
-
         return $mapper;
     }
 

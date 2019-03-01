@@ -15,6 +15,7 @@ use Seacommerce\Mapper\Operation;
 use Seacommerce\Mapper\Registry;
 use Seacommerce\Mapper\ValueConverter\DateTimeConverter;
 use Seacommerce\Mapper\ValueConverter\DateTimeImmutableConverter;
+use Symfony\Component\Filesystem\Filesystem;
 
 class MapperTest extends \PHPUnit\Framework\TestCase
 {
@@ -26,6 +27,7 @@ class MapperTest extends \PHPUnit\Framework\TestCase
     public static function setUpBeforeClass(): void
     {
         self::$cacheDir = __DIR__ . '/../cache/' . (new \ReflectionClass(__CLASS__))->getShortName();
+        (new Filesystem())->remove(self::$cacheDir);
     }
 
     /**

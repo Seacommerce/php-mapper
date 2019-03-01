@@ -6,25 +6,28 @@ namespace Seacommerce\Mapper;
 
 abstract class AbstractMapper
 {
-    /** @var ConfigurationInterface */
+    /** @var ConfigurationInterface|null */
     private $configuration;
 
     /** @var OperationInterface[] */
-    private $operations;
+    private $operations = [];
+
+    /** @var RegistryInterface|null */
+    private $registry;
 
     /**
-     * @return ConfigurationInterface
+     * @return ConfigurationInterface|null
      */
-    public function getConfiguration(): ConfigurationInterface
+    public function getConfiguration(): ?ConfigurationInterface
     {
         return $this->configuration;
     }
 
     /**
-     * @param ConfigurationInterface $configuration
+     * @param ConfigurationInterface|null $configuration
      * @return AbstractMapper
      */
-    public function setConfiguration(ConfigurationInterface $configuration): AbstractMapper
+    public function setConfiguration(?ConfigurationInterface $configuration): AbstractMapper
     {
         $this->configuration = $configuration;
         return $this;
@@ -51,5 +54,27 @@ abstract class AbstractMapper
     public function getOperation(string $property): OperationInterface
     {
         return $this->operations[$property];
+    }
+
+    /**
+     * @return RegistryInterface|null
+     */
+    public function getRegistry(): ?RegistryInterface
+    {
+        return $this->registry;
+    }
+
+    /**
+     * @param RegistryInterface|null $registry
+     * @return AbstractMapper
+     */
+    public function setRegistry(?RegistryInterface $registry): AbstractMapper
+    {
+        $this->registry = $registry;
+        return $this;
+    }
+
+    public function getValueConverter($fromType, $toType) {
+        return $this->registry->getValueConverter($fromType, $toType);
     }
 }
