@@ -4,7 +4,9 @@ declare(strict_types=1);
 namespace Seacommerce\Mapper\Test;
 
 use DateTime;
+use Seacommerce\Mapper\Compiler\CachedLoader;
 use Seacommerce\Mapper\Compiler\NativeCompiler;
+use Seacommerce\Mapper\ConfigurationInterface;
 use Seacommerce\Mapper\Exception\ClassNotFoundException;
 use Seacommerce\Mapper\Exception\ConfigurationNotFoundException;
 use Seacommerce\Mapper\Exception\InvalidArgumentException;
@@ -13,9 +15,21 @@ use Seacommerce\Mapper\Operation;
 use Seacommerce\Mapper\Registry;
 use Seacommerce\Mapper\ValueConverter\DateTimeConverter;
 use Seacommerce\Mapper\ValueConverter\DateTimeImmutableConverter;
+use Symfony\Component\Filesystem\Filesystem;
 
 class MapperTest extends \PHPUnit\Framework\TestCase
 {
+    private static $cacheDir;
+
+    /**
+     * @throws \ReflectionException
+     */
+    public static function setUpBeforeClass(): void
+    {
+        self::$cacheDir = __DIR__ . '/../cache/' . (new \ReflectionClass(__CLASS__))->getShortName();
+        (new Filesystem())->remove(self::$cacheDir);
+    }
+
     /**
      * @throws ClassNotFoundException
      * @throws ConfigurationNotFoundException
@@ -24,8 +38,8 @@ class MapperTest extends \PHPUnit\Framework\TestCase
     public function testMissingConfigurationThrowsException()
     {
         $this->expectException(ConfigurationNotFoundException::class);
-        $registry = new Registry();
-        $mapper = new Mapper($registry, new NativeCompiler('./var/cache'));
+        $registry = new Registry(__FUNCTION__);
+        $mapper = new Mapper($registry, new CachedLoader(new NativeCompiler(), self::$cacheDir));
         $mapper->map(new Model\PublicFields\Source(), Model\PublicFields\Target::class);
     }
 
@@ -37,8 +51,8 @@ class MapperTest extends \PHPUnit\Framework\TestCase
     public function testNonObjectOrArrayAsSourceThrowsException()
     {
         $this->expectException(InvalidArgumentException::class);
-        $registry = new Registry();
-        $mapper = new Mapper($registry, new NativeCompiler('./var/cache'));
+        $registry = new Registry(__FUNCTION__);
+        $mapper = new Mapper($registry, new CachedLoader(new NativeCompiler(), self::$cacheDir));
         $mapper->map(1, Model\PublicFields\Target::class);
     }
 
@@ -50,8 +64,8 @@ class MapperTest extends \PHPUnit\Framework\TestCase
     public function testNonExistingClassNameAsTargetThrowsException()
     {
         $this->expectException(ClassNotFoundException::class);
-        $registry = new Registry();
-        $mapper = new Mapper($registry, new NativeCompiler('./var/cache'));
+        $registry = new Registry(__FUNCTION__);
+        $mapper = new Mapper($registry, new CachedLoader(new NativeCompiler(), self::$cacheDir));
         $mapper->map(new Model\PublicFields\Source(), 'NonExistingClass');
     }
 
@@ -60,15 +74,17 @@ class MapperTest extends \PHPUnit\Framework\TestCase
      */
     public function testCompile()
     {
-        $registry = new Registry();
+        $registry = new Registry(__FUNCTION__);
         $registry->add(Model\PublicFields\Source::class, Model\PublicFields\Target::class)
             ->autoMap()
             ->forMembers(['ignore', 'dateTime', 'callback', 'fixed'], Operation::ignore())
+            ->prepare()
             ->validate();
 
-        $mapper = new Mapper($registry, new NativeCompiler('./var/cache'));
+        $mapper = new Mapper($registry, new CachedLoader(new NativeCompiler(), self::$cacheDir));
         $mapper->compile();
 
+        /** @var ConfigurationInterface $configuration */
         foreach ($mapper->getRegistry() as $configuration) {
             $this->assertTrue(class_exists($configuration->getMapperFullClassName(), false));
         }
@@ -81,7 +97,7 @@ class MapperTest extends \PHPUnit\Framework\TestCase
      */
     public function testMapToClass()
     {
-        $registry = new Registry();
+        $registry = new Registry(__FUNCTION__);
         $registry->add(Model\PublicFields\Source::class, Model\PublicFields\Target::class)
             ->autoMap()
             ->forMember('ignore', Operation::ignore())
@@ -90,10 +106,9 @@ class MapperTest extends \PHPUnit\Framework\TestCase
                 return 'x';
             }))
             ->forMember('fixed', Operation::setTo(100))
-            ->validate();
+            ;
 
-        $mapper = new Mapper($registry, new NativeCompiler('./var/cache'));
-
+        $mapper = new Mapper($registry, new CachedLoader(new NativeCompiler(), self::$cacheDir));
 
         $source = new Model\PublicFields\Source();
         $source->id = 1;
@@ -120,7 +135,7 @@ class MapperTest extends \PHPUnit\Framework\TestCase
      */
     public function testMapToSubclass()
     {
-        $registry = new Registry();
+        $registry = new Registry(__FUNCTION__);
         $registry->add(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class)
             ->autoMap()
             ->allowMapFromSubClass()
@@ -131,10 +146,11 @@ class MapperTest extends \PHPUnit\Framework\TestCase
                 return 'x';
             }))
             ->forMember('fixed', Operation::setTo(100))
+            ->prepare()
             ->validate();
 
 
-        $mapper = new Mapper($registry, new NativeCompiler('./var/cache'));
+        $mapper = new Mapper($registry, new CachedLoader(new NativeCompiler(), self::$cacheDir));
 
         $source = new Model\GettersSetters\SourceSubclass();
         $source->setId(1);
@@ -161,10 +177,11 @@ class MapperTest extends \PHPUnit\Framework\TestCase
      */
     public function testValueConverters()
     {
-        $registry = new Registry();
+        $registry = new Registry(__FUNCTION__);
         $registry->add(Model\ValueConverter\Source::class, Model\ValueConverter\Target::class)
             ->forMember('date', Operation::fromProperty('date')->useConverter(DateTimeConverter::toImmutable()))
             ->forMember('time', Operation::fromProperty('time')->useConverter(DateTimeConverter::fromTimestamp()))
+            ->prepare()
             ->validate();
 
         $source = new Model\ValueConverter\Source();
@@ -172,7 +189,7 @@ class MapperTest extends \PHPUnit\Framework\TestCase
             ->setDate(new DateTime())
             ->setTime((new DateTime())->getTimestamp());
 
-        $mapper = new Mapper($registry, new NativeCompiler('./var/cache'));
+        $mapper = new Mapper($registry, new CachedLoader(new NativeCompiler(), self::$cacheDir));
         /** @var Model\ValueConverter\Target $target */
         $target = $mapper->map($source, Model\ValueConverter\Target::class);
 
@@ -186,10 +203,11 @@ class MapperTest extends \PHPUnit\Framework\TestCase
      */
     public function testDefaultValueConverters()
     {
-        $registry = new Registry();
+        $registry = new Registry(__FUNCTION__);
         $registry->registerDefaultValueConverters();
         $registry->add(Model\ValueConverter\Source::class, Model\ValueConverter\Target::class)
             ->autoMap()
+            ->prepare()
             ->validate();
 
         $source = new Model\ValueConverter\Source();
@@ -197,7 +215,7 @@ class MapperTest extends \PHPUnit\Framework\TestCase
             ->setDate(new DateTime())
             ->setTime((new DateTime())->getTimestamp());
 
-        $mapper = new Mapper($registry, new NativeCompiler('./var/cache'));
+        $mapper = new Mapper($registry, new CachedLoader(new NativeCompiler(), self::$cacheDir));
         /** @var Model\ValueConverter\Target $target */
         $target = $mapper->map($source, Model\ValueConverter\Target::class);
 

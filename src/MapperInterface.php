@@ -1,16 +1,10 @@
 <?php
 
-
 namespace Seacommerce\Mapper;
-
-
-use Seacommerce\Mapper\Compiler\CompilerInterface;
 
 interface MapperInterface
 {
-    public function getRegistry(): Registry;
-
-    public function getCompiler(): CompilerInterface;
+    public function getRegistry(): RegistryInterface;
 
     public function map($source, $target, array $bag = null);
 

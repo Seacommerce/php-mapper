@@ -5,12 +5,14 @@ namespace Seacommerce\Mapper\Test;
 
 use Seacommerce\Mapper\Exception\AggregatedValidationErrorsException;
 use Seacommerce\Mapper\Exception\DuplicateConfigurationException;
+use Seacommerce\Mapper\Operation;
 use Seacommerce\Mapper\Registry;
 
 class RegistryTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @throws \Seacommerce\Mapper\Exception\AggregatedValidationErrorsException
+     * @throws \Exception
      */
     public function testInitialization()
     {
@@ -28,6 +30,9 @@ class RegistryTest extends \PHPUnit\Framework\TestCase
         $this->assertEmpty($errors);
     }
 
+    /**
+     * @throws \Exception
+     */
     public function testDuplicate()
     {
         $this->expectException(DuplicateConfigurationException::class);
@@ -36,16 +41,24 @@ class RegistryTest extends \PHPUnit\Framework\TestCase
         $registry->add(Model\PublicFields\Source::class, Model\PublicFields\Target::class);
     }
 
+    /**
+     * @throws AggregatedValidationErrorsException
+     * @throws \Exception
+     */
     public function testValidateValidMappingShouldReturnNull()
     {
         $registry = new Registry();
         $registry->add(Model\PublicFields\Source::class, Model\PublicFields\Target::class)
             ->autoMap()
-            ->ignore('dateTime', 'fixed', 'ignore');
+            ->forMembers(['dateTime', 'fixed', 'ignore'], Operation::ignore());
         $exception = $registry->validate(false);
         $this->assertNull($exception);
     }
 
+    /**
+     * @throws AggregatedValidationErrorsException
+     * @throws \Exception
+     */
     public function testValidateInvalidMappingShouldReturnException()
     {
         $registry = new Registry();

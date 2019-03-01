@@ -5,6 +5,7 @@ namespace Seacommerce\Mapper\Test;
 
 
 use DateTime;
+use Seacommerce\Mapper\Compiler\EvalLoader;
 use Seacommerce\Mapper\Compiler\NativeCompiler;
 use Seacommerce\Mapper\Mapper;
 use Seacommerce\Mapper\Operation;
@@ -61,10 +62,11 @@ class PerformanceTest extends \PHPUnit\Framework\TestCase
                 return 'x';
             }))
             ->forMember('fixed', Operation::setTo(100))
+            ->prepare()
             ->validate();
 
 
-        $mapper = new Mapper($registry, new NativeCompiler('./var/cache'));
+        $mapper = new Mapper($registry, new EvalLoader(new NativeCompiler()));
         $mapper->compile();
 
         $source = new Model\GettersSetters\Source();

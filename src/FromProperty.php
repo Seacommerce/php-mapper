@@ -45,12 +45,17 @@ class FromProperty implements OperationInterface
      * @param ValueConverterInterface|callable|null $converter
      * @return FromProperty
      */
-    public function useConverter($converter) : FromProperty {
-        if($converter !== null && !is_callable($converter) && !($converter instanceof ValueConverterInterface))
-        {
+    public function useConverter($converter): FromProperty
+    {
+        if ($converter !== null && !is_callable($converter) && !($converter instanceof ValueConverterInterface)) {
             throw new \InvalidArgumentException("Invalid value for 'converter'. Expected null, callable or ValueConverterInterface.");
         }
         $this->converter = $converter;
         return $this;
+    }
+
+    public function getHash(): array
+    {
+        return [self::class, $this->from];
     }
 }

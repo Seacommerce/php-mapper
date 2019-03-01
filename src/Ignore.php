@@ -2,8 +2,10 @@
 
 namespace Seacommerce\Mapper;
 
-use Seacommerce\Mapper\OperationInterface;
-
 class Ignore implements OperationInterface
 {
+    public function getHash(): array
+    {
+        return [self::class];
+    }
 }

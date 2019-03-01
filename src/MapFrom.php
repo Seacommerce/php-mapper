@@ -1,10 +1,6 @@
 <?php
 
-
 namespace Seacommerce\Mapper;
-
-
-use Seacommerce\Mapper\OperationInterface;
 
 class MapFrom implements OperationInterface
 {
@@ -26,5 +22,10 @@ class MapFrom implements OperationInterface
     public function getCallback(): callable
     {
         return $this->callback;
+    }
+
+    public function getHash(): array
+    {
+        return [self::class];
     }
 }

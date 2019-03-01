@@ -53,6 +53,7 @@ class Registry implements RegistryInterface
             throw new DuplicateConfigurationException($source, $target);
         }
         $m = new Configuration($source, $target, $this->scope, $this->valueConverters);
+        $m->setRegistry($this);
         $this->registry[$key] = $m;
         return $m;
     }
@@ -85,12 +86,14 @@ class Registry implements RegistryInterface
      * @param bool $throw
      * @return AggregatedValidationErrorsException|null
      * @throws AggregatedValidationErrorsException
+     * @throws Exception\PropertyNotFoundException
+     * @throws Exception\ValidationErrorsException
      */
     public function validate(bool $throw = true): ?AggregatedValidationErrorsException
     {
         $all = [];
         foreach ($this->registry as $key => $config) {
-            $all[] = $config->validate(false);
+            $all[] = $config->prepare()->validate(false);
         }
         $all = array_filter($all);
         if (empty($all)) {
@@ -104,7 +107,7 @@ class Registry implements RegistryInterface
     }
 
     /**
-     * @inheritdoc
+     * @return \ArrayIterator[Configuration]
      */
     public function getIterator()
     {
@@ -112,28 +115,32 @@ class Registry implements RegistryInterface
     }
 
     /**
-     * @param string $fromClass
-     * @param string $toClass
+     * @param string $fromType
+     * @param string $toType
      * @param ValueConverterInterface|callable $converter
      */
-    public function registerValueConverter(string $fromClass, string $toClass, $converter)
+    public function registerValueConverter(string $fromType, string $toType, $converter) : void
     {
         if (!is_callable($converter) && !($converter instanceof ValueConverterInterface)) {
             throw new \InvalidArgumentException("Invalid type for 'converter'. Expected callable or ValueConverterInterface.");
         }
-        $this->valueConverters[$fromClass][$toClass] = $converter;
+        $this->valueConverters[$fromType][$toType] = $converter;
     }
 
-    public function registerDefaultValueConverters()
+    public function registerDefaultValueConverters() : void
     {
         $this->registerValueConverter(\DateTime::class, \DateTimeImmutable::class, DateTimeConverter::toImmutable());
         $this->registerValueConverter(\DateTime::class, 'int', DateTimeConverter::toTimestamp());
         $this->registerValueConverter('int', \DateTime::class, DateTimeConverter::fromTimestamp());
 
-
         $this->registerValueConverter(\DateTimeImmutable::class, \DateTime::class, DateTimeImmutableConverter::toMutable());
         $this->registerValueConverter(\DateTimeImmutable::class, 'int', DateTimeImmutableConverter::toTimestamp());
         $this->registerValueConverter('int', \DateTimeImmutable::class, DateTimeImmutableConverter::fromTimestamp());
+    }
+
+    public function getValueConverter(string $fromType, string $toType)
+    {
+        return $this->valueConverters[$fromType][$toType] ?? null;
     }
 
     private function getConfigurationKey(string $sourceClass, string $targetClass): string
