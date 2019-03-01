@@ -10,6 +10,6 @@ class NativeCompilerTest extends TestCase
 {
     public function testX()
     {
-        $this->expectNotToPerformAssertions();
+        $this->assertTrue(true);
     }
 }

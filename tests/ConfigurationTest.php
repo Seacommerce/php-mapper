@@ -149,10 +149,10 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
      */
     public function testPropertyLessTargetClassShouldThrowException()
     {
-        $this->expectNotToPerformAssertions();
         (new Configuration(Model\GettersSetters\Source::class, Model\None\Target::class, 'X'))
             ->prepare()
             ->validate();
+        $this->assertTrue(true);
     }
 
     /**
