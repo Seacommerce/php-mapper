@@ -130,7 +130,6 @@ class Registry implements RegistryInterface
         $this->registerValueConverter(\DateTime::class, 'int', DateTimeConverter::toTimestamp());
         $this->registerValueConverter('int', \DateTime::class, DateTimeConverter::fromTimestamp());
 
-
         $this->registerValueConverter(\DateTimeImmutable::class, \DateTime::class, DateTimeImmutableConverter::toMutable());
         $this->registerValueConverter(\DateTimeImmutable::class, 'int', DateTimeImmutableConverter::toTimestamp());
         $this->registerValueConverter('int', \DateTimeImmutable::class, DateTimeImmutableConverter::fromTimestamp());

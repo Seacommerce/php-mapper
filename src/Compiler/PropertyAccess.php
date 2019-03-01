@@ -1,8 +1,6 @@
 <?php
 
-
 namespace Seacommerce\Mapper\Compiler;
-
 
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\MethodCall;

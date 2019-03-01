@@ -14,7 +14,6 @@ class Configuration implements ConfigurationInterface
     private $sourceClass;
     /*** @var string */
     private $targetClass;
-
     /*** @var string */
     private $scope;
 
@@ -28,6 +27,12 @@ class Configuration implements ConfigurationInterface
 
     /** @var bool */
     private $_allowMapFromSubClass = false;
+
+    /** @var bool */
+    private $_autoMap = false;
+
+    /** @var bool */
+    private $_ignoreUnmapped = false;
 
     /*** @var array */
     private $valueConverters;
@@ -46,7 +51,6 @@ class Configuration implements ConfigurationInterface
      * @param string $targetClass
      * @param string $scope
      * @param array $valueConverters
-     * @throws PropertyNotFoundException
      */
     public function __construct(string $sourceClass, string $targetClass, string $scope, array $valueConverters = [])
     {
@@ -54,8 +58,6 @@ class Configuration implements ConfigurationInterface
         $this->targetClass = $targetClass;
         $this->scope = $scope;
         $this->valueConverters = $valueConverters;
-        $this->extractProperties();
-
         $sourceClass = preg_replace('/\\\\{1}/', '_', $sourceClass);
         $destClass = preg_replace('/\\\\{1}/', '_', $targetClass);
         $this->mapperClassName = "__{$scope}_{$sourceClass}_to_{$destClass}";
@@ -126,176 +128,6 @@ class Configuration implements ConfigurationInterface
         return $this->targetProperties;
     }
 
-    public function autoMap(): ConfigurationInterface
-    {
-        $matching = array_keys(array_intersect_key($this->sourceProperties, $this->targetProperties));
-        $unmapped = array_diff($matching, array_keys($this->operations));
-        foreach ($unmapped as $p) {
-            $this->operations[$p] = Operation::fromProperty($p)->useConverter($this->getValueConverter($p, $p));
-        }
-        return $this;
-    }
-
-    public function ignoreUnmapped(): ConfigurationInterface
-    {
-        $matching = array_keys(array_intersect_key($this->sourceProperties, $this->targetProperties));
-        $unmapped = array_diff($matching, array_keys($this->operations));
-        foreach ($unmapped as $p) {
-            $this->operations[$p] = Operation::ignore();
-        }
-        return $this;
-    }
-
-    /**
-     * @param string $property
-     * @param OperationInterface|callable $operation
-     * @return ConfigurationInterface
-     * @throws \Exception
-     */
-    public function forMember(string $property, $operation): ConfigurationInterface
-    {
-        $this->ensureTargetProperty($property);
-        if (is_callable($operation)) {
-            $this->operations[$property] = Operation::mapFrom($operation);
-        } else if ($operation instanceof FromProperty && $operation->getConverter() === null) {
-            $operation->useConverter($this->getValueConverter($operation->getFrom(), $property));
-        }
-        $this->operations[$property] = $operation;
-        return $this;
-    }
-
-    /**
-     * @param array $properties
-     * @param \Seacommerce\Mapper\OperationInterface|callable $operation
-     * @return ConfigurationInterface
-     * @throws \Exception
-     */
-    public function forMembers(array $properties, $operation): ConfigurationInterface
-    {
-        foreach ($properties as $p) {
-            $this->forMember($p, $operation);
-        }
-        return $this;
-    }
-
-    /**
-     * @param string ...$property
-     * @return ConfigurationInterface
-     * @throws \Exception
-     */
-    public function ignore(string ... $property): ConfigurationInterface
-    {
-        foreach ($property as $p) {
-            $this->ensureTargetProperty($p);
-            $this->operations[$p] = Operation::ignore();
-        }
-        return $this;
-    }
-
-    /**
-     * @param array $properties
-     * @return ConfigurationInterface
-     * @throws \Exception
-     */
-    public function map(array $properties): ConfigurationInterface
-    {
-        foreach ($properties as $t => $s) {
-            $this->ensureTargetProperty($t);
-            $this->ensureSourceProperty($s);
-            $this->operations[$t] = Operation::fromProperty($s)->useConverter($this->getValueConverter($s, $t));
-        }
-        return $this;
-    }
-
-    /**
-     * @param string $property
-     * @param callable $callback
-     * @return ConfigurationInterface
-     * @throws \Exception
-     */
-    public function callback(string $property, callable $callback): ConfigurationInterface
-    {
-        $this->ensureTargetProperty($property);
-        $this->operations[$property] = Operation::mapFrom($callback);
-        return $this;
-    }
-
-    /**
-     * @param string $property
-     * @param $value
-     * @return ConfigurationInterface
-     * @throws \Exception
-     */
-    public function constValue(string $property, $value): ConfigurationInterface
-    {
-        $this->ensureTargetProperty($property);
-        $this->operations[$property] = new SetTo($value);
-        return $this;
-    }
-
-    /**
-     * @param string $property
-     * @param $operation
-     * @return Configuration
-     * @throws \Exception
-     */
-    public function custom(string $property, OperationInterface $operation): ConfigurationInterface
-    {
-        $this->ensureTargetProperty($property);
-        if (is_string($operation)) {
-            if (class_exists($operation, true)) {
-                $this->operations[$property] = new $operation;
-                return $this;
-            }
-        }
-        if ($operation instanceof OperationInterface) {
-            $this->operations[$property] = $operation;
-            return $this;
-        }
-        if (is_callable($operation)) {
-            $this->operations[$property] = $operation;
-            return $this;
-        }
-        // TODO: Specific exception
-        throw new \Exception("Invalid value for 'operation'. OperationInterface or callable expected.");
-    }
-
-    /**
-     * @param bool $throw
-     * @return ValidationErrorsException
-     * @throws ValidationErrorsException
-     */
-    public function validate(bool $throw = true): ?ValidationErrorsException
-    {
-        $diff = array_keys(array_diff_key($this->targetProperties, $this->operations));
-        $errors = [];
-        foreach ($diff as $propertyName) {
-            $targetProperty = $this->targetProperties[$propertyName];
-            if ($targetProperty->isWritable()) {
-                $errors[] = "Missing mapping for property '{$propertyName}'.";
-            }
-        }
-        foreach ($this->operations as $property => $operation) {
-            if (!$this->targetProperties[$property]->isWritable()) {
-                $errors[] = "Target property '{$property}' is not writable. Either declare a setter or make the property public.";
-            }
-            if ($operation instanceof FromProperty) {
-                if (!$this->sourceProperties[$operation->getFrom()]->isReadable()) {
-                    $errors[] = "Source property '{$operation->getFrom()}' is not readable. Either declare a getter/hasser/isser or make the property public.";
-                }
-            }
-        }
-
-        if (empty($errors)) {
-            return null;
-        }
-        $ex = new ValidationErrorsException($this->sourceClass, $this->targetClass, $errors);
-        if ($throw) {
-            throw $ex;
-        }
-        return $ex;
-    }
-
     public function getOperations(): array
     {
         return $this->operations;
@@ -317,6 +149,107 @@ class Configuration implements ConfigurationInterface
         return $this->_allowMapFromSubClass;
     }
 
+    public function autoMap(): ConfigurationInterface
+    {
+        $this->_autoMap = true;
+        return $this;
+    }
+
+    public function ignoreUnmapped(): ConfigurationInterface
+    {
+        $this->_ignoreUnmapped = true;
+        return $this;
+    }
+
+    /**
+     * @param string $property
+     * @param OperationInterface|callable $operation
+     * @return ConfigurationInterface
+     * @throws \Exception
+     */
+    public function forMember(string $property, $operation): ConfigurationInterface
+    {
+        if (is_callable($operation)) {
+            $this->operations[$property] = Operation::mapFrom($operation);
+        }
+        $this->operations[$property] = $operation;
+        return $this;
+    }
+
+    /**
+     * @param array $properties
+     * @param \Seacommerce\Mapper\OperationInterface|callable $operation
+     * @return ConfigurationInterface
+     * @throws \Exception
+     */
+    public function forMembers(array $properties, $operation): ConfigurationInterface
+    {
+        foreach ($properties as $p) {
+            $this->forMember($p, $operation);
+        }
+        return $this;
+    }
+
+    /**
+     * @param bool $throw
+     * @return ValidationErrorsException
+     * @throws ValidationErrorsException
+     * @throws PropertyNotFoundException
+     */
+    public function validate(bool $throw = true): ?ValidationErrorsException
+    {
+        $this->extractProperties();
+        if ($this->_autoMap) {
+            $matching = array_keys(array_intersect_key($this->sourceProperties, $this->targetProperties));
+            $unmapped = array_diff($matching, array_keys($this->operations));
+            foreach ($unmapped as $p) {
+                $this->operations[$p] = Operation::fromProperty($p);
+            }
+        }
+        if ($this->_ignoreUnmapped) {
+            $unmapped = array_diff(array_keys($this->targetProperties), array_keys($this->operations));
+            foreach ($unmapped as $p) {
+                $this->operations[$p] = Operation::ignore();
+            }
+        }
+
+        $unmapped = array_keys(array_diff_key($this->targetProperties, $this->operations));
+        $errors = [];
+        foreach ($unmapped as $propertyName) {
+            $targetProperty = $this->targetProperties[$propertyName];
+            if ($targetProperty->isWritable()) {
+                $errors[] = "Missing mapping for property '{$propertyName}'.";
+            }
+        }
+        foreach ($this->operations as $property => $operation) {
+            if (!isset($this->targetProperties[$property])) {
+                throw new PropertyNotFoundException($property, array_keys($this->targetProperties));
+            }
+
+            if (!$this->targetProperties[$property]->isWritable()) {
+                $errors[] = "Target property '{$property}' is not writable. Either declare a setter or make the property public.";
+            }
+            if ($operation instanceof FromProperty) {
+                if (!isset($this->sourceProperties[$operation->getFrom()])) {
+                    throw new PropertyNotFoundException($property, array_keys($this->sourceProperties));
+                }
+
+                if (!$this->sourceProperties[$operation->getFrom()]->isReadable()) {
+                    $errors[] = "Source property '{$operation->getFrom()}' is not readable. Either declare a getter/hasser/isser or make the property public.";
+                }
+            }
+        }
+
+        if (empty($errors)) {
+            return null;
+        }
+        $ex = new ValidationErrorsException($this->sourceClass, $this->targetClass, $errors);
+        if ($throw) {
+            throw $ex;
+        }
+        return $ex;
+    }
+
     /**
      * @throws PropertyNotFoundException
      */
@@ -328,62 +261,38 @@ class Configuration implements ConfigurationInterface
         if (empty($s)) {
             throw new PropertyNotFoundException('*any*', []);
         }
-
         if (empty($t)) {
             throw new PropertyNotFoundException('*any*', []);
         }
-
         $this->sourceProperties = $s;
         $this->targetProperties = $t;
     }
 
-    /**
-     * @param string $property
-     * @throws \Exception
-     */
-    private function ensureTargetProperty(string $property): void
-    {
-        if (!isset($this->targetProperties[$property])) {
-            throw new PropertyNotFoundException($property, array_keys($this->targetProperties));
-        }
-    }
-
-    /**
-     * @param string $property
-     * @throws \Exception
-     */
-    private function ensureSourceProperty(string $property): void
-    {
-        if (!isset($this->sourceProperties[$property])) {
-            throw new PropertyNotFoundException($property, array_keys($this->sourceProperties));
-        }
-    }
-
-    /**
-     * @param string $source
-     * @param string $target
-     * @return null|callable|ValueConverterInterface
-     */
-    private function getValueConverter(string $source, string $target)
-    {
-        /** @var Type[] $fromTypes */
-        $fromTypes = $this->sourceProperties[$source]->getTypes();
-        /** @var Type[] $toTypes */
-        $toTypes = $this->targetProperties[$target]->getTypes();
-        if ($fromTypes !== null && $fromTypes !== null && count($fromTypes) !== 1 && count($toTypes) !== 1) {
-            return null;
-        }
-
-        $fromType = array_shift($fromTypes);
-        $toType = array_shift($toTypes);
-
-        $f = $fromType->getClassName() ?? $fromType->getBuiltinType();
-        $t = $toType->getClassName() ?? $toType->getBuiltinType();
-        if ($f === null || $t === null) {
-            return null;
-        }
-
-        $converter = $this->valueConverters[$f][$t] ?? null;
-        return $converter;
-    }
+//    /**
+//     * @param string $source
+//     * @param string $target
+//     * @return null|callable|ValueConverterInterface
+//     */
+//    private function getValueConverter(string $source, string $target)
+//    {
+//        /** @var Type[] $fromTypes */
+//        $fromTypes = $this->sourceProperties[$source]->getTypes();
+//        /** @var Type[] $toTypes */
+//        $toTypes = $this->targetProperties[$target]->getTypes();
+//        if ($fromTypes !== null && $fromTypes !== null && count($fromTypes) !== 1 && count($toTypes) !== 1) {
+//            return null;
+//        }
+//
+//        $fromType = array_shift($fromTypes);
+//        $toType = array_shift($toTypes);
+//
+//        $f = $fromType->getClassName() ?? $fromType->getBuiltinType();
+//        $t = $toType->getClassName() ?? $toType->getBuiltinType();
+//        if ($f === null || $t === null) {
+//            return null;
+//        }
+//
+//        $converter = $this->valueConverters[$f][$t] ?? null;
+//        return $converter;
+//    }
 }

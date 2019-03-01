@@ -98,7 +98,8 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
     {
         $this->expectException(PropertyNotFoundException::class);
         (new Configuration(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class, 'X'))
-            ->ignore('nonExisting');
+            ->forMember('nonExisting', Operation::ignore())
+            ->validate();
     }
 
     /**
@@ -109,7 +110,8 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
     {
         $this->expectException(PropertyNotFoundException::class);
         (new Configuration(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class, 'X'))
-            ->map(['dateTime' => 'nonExisting']);
+            ->forMember('dateTime', Operation::fromProperty('nonExisting'))
+            ->validate();
     }
 
     /**
@@ -120,25 +122,30 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
     {
         $this->expectException(PropertyNotFoundException::class);
         (new Configuration(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class, 'X'))
-            ->map(['nonExisting' => 'date']);
+            ->forMember('nonExisting', Operation::fromProperty('date'))
+            ->validate();
     }
 
     /**
      * @throws PropertyNotFoundException
+     * @throws ValidationErrorsException
      */
     public function testPropertyLessSourceClassShouldThrowException()
     {
         $this->expectException(PropertyNotFoundException::class);
-        new Configuration(Model\None\Source::class, Model\GettersSetters\Target::class, 'X');
+        (new Configuration(Model\None\Source::class, Model\GettersSetters\Target::class, 'X'))
+            ->validate();
     }
 
     /**
      * @throws PropertyNotFoundException
+     * @throws ValidationErrorsException
      */
     public function testPropertyLessTargetClassShouldThrowException()
     {
         $this->expectException(PropertyNotFoundException::class);
-        new Configuration(Model\GettersSetters\Source::class, Model\None\Target::class, 'X');
+        (new Configuration(Model\GettersSetters\Source::class, Model\None\Target::class, 'X'))
+            ->validate();
     }
 
     /**

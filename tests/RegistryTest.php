@@ -5,6 +5,7 @@ namespace Seacommerce\Mapper\Test;
 
 use Seacommerce\Mapper\Exception\AggregatedValidationErrorsException;
 use Seacommerce\Mapper\Exception\DuplicateConfigurationException;
+use Seacommerce\Mapper\Operation;
 use Seacommerce\Mapper\Registry;
 
 class RegistryTest extends \PHPUnit\Framework\TestCase
@@ -41,7 +42,7 @@ class RegistryTest extends \PHPUnit\Framework\TestCase
         $registry = new Registry();
         $registry->add(Model\PublicFields\Source::class, Model\PublicFields\Target::class)
             ->autoMap()
-            ->ignore('dateTime', 'fixed', 'ignore');
+            ->forMembers(['dateTime', 'fixed', 'ignore'], Operation::ignore());
         $exception = $registry->validate(false);
         $this->assertNull($exception);
     }

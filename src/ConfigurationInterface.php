@@ -4,6 +4,8 @@ namespace Seacommerce\Mapper;
 
 use Seacommerce\Mapper\Exception\ValidationErrorsException;
 
+
+
 interface ConfigurationInterface
 {
     /**
@@ -68,44 +70,6 @@ interface ConfigurationInterface
      * @return ConfigurationInterface
      */
     public function forMembers(array $properties, $operation): ConfigurationInterface;
-
-    /**
-     * @param string ...$property
-     * @return ConfigurationInterface
-     * @deprecated Use forMember('foo', Operations::ignore()) instead.
-     */
-    public function ignore(string ... $property): ConfigurationInterface;
-
-    /**
-     * @param array $properties
-     * @return ConfigurationInterface
-     * @deprecated Use forMember('target', Operations::fromProperty('source')) instead.
-     */
-    public function map(array $properties): ConfigurationInterface;
-
-    /**
-     * @param string $property
-     * @param callable $callback
-     * @return ConfigurationInterface
-     * @deprecated Use forMember('foo', Operations::mapFrom($callable)) instead.
-     */
-    public function callback(string $property, callable $callback): ConfigurationInterface;
-
-    /**
-     * @param string $property
-     * @param $value
-     * @return ConfigurationInterface
-     * @deprecated Use forMember('foo', Operations::setTo($val)) instead.
-     */
-    public function constValue(string $property, $value): ConfigurationInterface;
-
-    /**
-     * @param string $property
-     * @param OperationInterface $operation
-     * @return ConfigurationInterface
-     * @deprecated Use forMember('foo', new SomeCustomOperation()) instead.
-     */
-    public function custom(string $property, OperationInterface $operation): ConfigurationInterface;
 
     public function validate(bool $throw = true): ?ValidationErrorsException;
 
