@@ -102,7 +102,7 @@ class PreparedConfiguration
                 throw new PropertyNotFoundException($property, array_keys($this->targetProperties));
             }
 
-            if (!$this->targetProperties[$property]->isWritable()) {
+            if (!$this->targetProperties[$property]->isWritable() && !($operation instanceof Ignore)) {
                 $errors[] = "Target property '{$property}' is not writable. Either declare a setter or make the property public.";
             }
             if ($operation instanceof FromProperty) {

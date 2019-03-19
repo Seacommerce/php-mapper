@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpUnhandledExceptionInspection */
 declare(strict_types=1);
 
 namespace Seacommerce\Mapper\Test;
@@ -184,5 +184,17 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
             ->forMember('name', Operation::fromProperty('nonexitingproperty'))
             ->prepare()
             ->validate();
+    }
+
+    public function testIgnoredUnwritablePropertyShouldNotThrowException()
+    {
+        $registry = new Registry(__FUNCTION__);
+        $prepared =
+            $registry->add(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class)
+                ->autoMap()
+                ->ignoreUnmapped()
+                ->prepare();
+        $prepared->validate();
+        $this->assertTrue(true);
     }
 }
