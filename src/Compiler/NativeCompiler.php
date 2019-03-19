@@ -4,6 +4,8 @@ namespace Seacommerce\Mapper\Compiler;
 
 use PhpParser\BuilderFactory;
 use PhpParser\Comment\Doc;
+use PhpParser\Node\Expr\Assign;
+use PhpParser\Node\Expr\BinaryOp\Coalesce;
 use PhpParser\Node\Expr\BinaryOp\Identical;
 use PhpParser\Node\Expr\ConstFetch;
 use PhpParser\Node\Expr\Variable;
@@ -43,9 +45,7 @@ class NativeCompiler implements CompilerInterface
         $prepared->validate();
 
         $thisMapper = new Variable('this');
-
         $source = new Variable('source');
-
         $target = new Variable('target');
         $mapper = new Variable('mapper');
         $context = new Variable('context');
@@ -57,8 +57,7 @@ class NativeCompiler implements CompilerInterface
             $c = $factory->methodCall($thisMapper, 'getValueConverter', [$factory->val($fromType), $factory->val($toType)]);
             if (is_callable($converter)) {
                 $read = $factory->funcCall($c, [$read]);
-            }
-            else if ($converter instanceof ValueConverterInterface) {
+            } else if ($converter instanceof ValueConverterInterface) {
                 $read = $factory->methodCall($c, 'convert', [$read]);
             }
             return $read;
@@ -66,6 +65,14 @@ class NativeCompiler implements CompilerInterface
 
         $sourceProperties = $prepared->getSourceProperties();
         $targetProperties = $prepared->getTargetProperties();
+
+        if ($configuration->getBefore()) {
+            $call = $factory->funcCall($factory->methodCall($factory->methodCall($context, 'getConfiguration'), 'getBefore'), [
+                $source, $target, $mapper, $context
+            ]);
+            $assign = new Assign($target, new  Coalesce($call, $target));
+            $stmts[] = $assign;
+        }
 
         $stmts[] = new If_(new Identical(new ConstFetch(new Name('null')), $source), ['stmts' => [new Return_($source)]]);
         /**
@@ -107,6 +114,13 @@ class NativeCompiler implements CompilerInterface
                 $write = PropertyAccess::getWriteExpr($target, $targetProperties[$property], $read);
                 $stmts[] = $write;
             }
+        }
+        if ($configuration->getAfter()) {
+            $call = $factory->funcCall($factory->methodCall($factory->methodCall($context, 'getConfiguration'), 'getAfter'), [
+                $source, $target, $mapper, $context
+            ]);
+            $assign = new Assign($target, new  Coalesce($call, $target));
+            $stmts[] = $assign;
         }
         $stmts[] = new Return_($target);
 

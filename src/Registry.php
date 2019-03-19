@@ -25,10 +25,10 @@ class Registry implements RegistryInterface
     /**
      * Registry constructor.
      * @param string|null $scope
-     * @throws \Exception
      */
     public function __construct(?string $scope = null)
     {
+        /** @noinspection PhpUnhandledExceptionInspection */
         $this->scope = $scope ?? strtoupper(bin2hex(random_bytes(6)));
     }
 
@@ -44,7 +44,7 @@ class Registry implements RegistryInterface
      * @param string $source
      * @param string $target
      * @return ConfigurationInterface
-     * @throws \Exception
+     * @throws DuplicateConfigurationException
      */
     public function add(string $source, string $target): ConfigurationInterface
     {

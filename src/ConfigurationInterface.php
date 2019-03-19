@@ -66,6 +66,31 @@ interface ConfigurationInterface
 
     public function getIgnoreUnmapped(): bool;
 
+
+    /**
+     * Gets called before the mapping is executed.
+     * @param callable $callable
+     * @return ConfigurationInterface
+     */
+    public function before(callable $callable): ConfigurationInterface;
+
+    /**
+     * @return callable|null
+     */
+    public function getBefore(): ?callable;
+
+        /**
+     * Gets called after the mapping is executed.
+     * @param callable $callable
+     * @return ConfigurationInterface
+     */
+    public function after(callable $callable): ConfigurationInterface;
+
+    /**
+     * @return callable|null
+     */
+    public function getAfter(): ?callable;
+
     /**
      * @param string $property
      * @param \Seacommerce\Mapper\OperationInterface|callable $operation

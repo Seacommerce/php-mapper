@@ -1,4 +1,8 @@
 <?php
+
+/** @noinspection PhpUnhandledExceptionInspection */
+/** @noinspection PhpUnusedParameterInspection */
+
 declare(strict_types=1);
 
 namespace Seacommerce\Mapper\Test;
@@ -7,10 +11,12 @@ use DateTime;
 use Seacommerce\Mapper\Compiler\CachedLoader;
 use Seacommerce\Mapper\Compiler\NativeCompiler;
 use Seacommerce\Mapper\ConfigurationInterface;
+use Seacommerce\Mapper\Context;
 use Seacommerce\Mapper\Exception\ClassNotFoundException;
 use Seacommerce\Mapper\Exception\ConfigurationNotFoundException;
 use Seacommerce\Mapper\Exception\InvalidArgumentException;
 use Seacommerce\Mapper\Mapper;
+use Seacommerce\Mapper\MapperInterface;
 use Seacommerce\Mapper\Operation;
 use Seacommerce\Mapper\Registry;
 use Seacommerce\Mapper\ValueConverter\DateTimeConverter;
@@ -105,8 +111,7 @@ class MapperTest extends \PHPUnit\Framework\TestCase
             ->forMember('callback', Operation::mapFrom(function () {
                 return 'x';
             }))
-            ->forMember('fixed', Operation::setTo(100))
-            ;
+            ->forMember('fixed', Operation::setTo(100));
 
         $mapper = new Mapper($registry, new CachedLoader(new NativeCompiler(), self::$cacheDir));
 
@@ -222,5 +227,62 @@ class MapperTest extends \PHPUnit\Framework\TestCase
         $this->assertNotNull($target);
         $this->assertEquals($source->getDate()->getTimestamp(), $target->getDate()->getTimestamp());
         $this->assertEquals($source->getDate()->getTimezone()->getName(), $target->getDate()->getTimezone()->getName());
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function testBefore()
+    {
+        $registry = new Registry(__FUNCTION__);
+        $prepared = $registry->add(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class)
+            ->autoMap()
+            ->before(function (?Model\GettersSetters\Source $source,
+                               Model\GettersSetters\Target $target,
+                               MapperInterface $mapperInterface,
+                               Context $context) {
+                $target->setIgnore("before");
+                $target->setFixed("before");
+            })
+            ->ignoreUnmapped()
+            ->forMember('fixed', Operation::setTo('modified'))
+            ->prepare();
+
+        $prepared->validate();
+
+        $source = new Model\GettersSetters\Source();
+        $mapper = new Mapper($registry, new CachedLoader(new NativeCompiler(), self::$cacheDir));
+        /** @var Model\GettersSetters\Target $target */
+        $target = $mapper->map($source, Model\GettersSetters\Target::class);
+        $this->assertNotNull($target);
+        $this->assertSame('before', $target->getIgnore());
+        $this->assertSame('modified', $target->getFixed());
+    }
+
+    public function testAfter()
+    {
+        $registry = new Registry(__FUNCTION__);
+        $prepared = $registry->add(Model\GettersSetters\Source::class, Model\GettersSetters\Target::class)
+            ->autoMap()
+            ->after(function (?Model\GettersSetters\Source $source,
+                              Model\GettersSetters\Target $target,
+                              MapperInterface $mapperInterface,
+                              Context $context) {
+                $target->setName("after");
+            })
+            ->ignoreUnmapped()
+            ->forMember('id', Operation::setTo(1))
+            ->forMember('name', Operation::setTo('mapped'))
+            ->prepare();
+
+        $prepared->validate();
+
+        $source = new Model\GettersSetters\Source();
+        $mapper = new Mapper($registry, new CachedLoader(new NativeCompiler(), self::$cacheDir));
+        /** @var Model\GettersSetters\Target $target */
+        $target = $mapper->map($source, Model\GettersSetters\Target::class);
+        $this->assertNotNull($target);
+        $this->assertSame(1, $target->getId());
+        $this->assertSame('after', $target->getName());
     }
 }

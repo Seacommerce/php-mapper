@@ -35,6 +35,11 @@ class Configuration implements ConfigurationInterface
     /** @var string */
     private $mapperNamespace = 'Mappings';
 
+    /** @var callable|null */
+    private $_before;
+    /** @var callable|null */
+    private $_after;
+
 
     /**
      * Configuration constructor.
@@ -188,6 +193,45 @@ class Configuration implements ConfigurationInterface
     }
 
     /**
+     * Gets called before the mapping is executed.
+     * @param callable $callable
+     * @return ConfigurationInterface
+     */
+    public function before(callable $callable): ConfigurationInterface
+    {
+        $this->_before = $callable;
+        return $this;
+    }
+
+    /**
+     * @return callable|null
+     */
+    public function getBefore(): ?callable
+    {
+        return $this->_before;
+    }
+
+    /**
+     * Gets called after the mapping is executed.
+     * @param callable $callable
+     * @return ConfigurationInterface
+     */
+    public function after(callable $callable): ConfigurationInterface
+    {
+        $this->_after = $callable;
+        return $this;
+    }
+
+    /**
+     * @return callable|null
+     */
+    public function getAfter(): ?callable
+    {
+        return $this->_after;
+    }
+
+
+    /**
      * @param string $property
      * @param OperationInterface|callable $operation
      * @return ConfigurationInterface
@@ -223,32 +267,4 @@ class Configuration implements ConfigurationInterface
     {
         return new PreparedConfiguration($this);
     }
-
-//    /**
-//     * @param string $source
-//     * @param string $target
-//     * @return null|callable|ValueConverterInterface
-//     */
-//    private function getValueConverter(string $source, string $target)
-//    {
-//        /** @var Type[] $fromTypes */
-//        $fromTypes = $this->sourceProperties[$source]->getTypes();
-//        /** @var Type[] $toTypes */
-//        $toTypes = $this->targetProperties[$target]->getTypes();
-//        if ($fromTypes !== null && $fromTypes !== null && count($fromTypes) !== 1 && count($toTypes) !== 1) {
-//            return null;
-//        }
-//
-//        $fromType = array_shift($fromTypes);
-//        $toType = array_shift($toTypes);
-//
-//        $f = $fromType->getClassName() ?? $fromType->getBuiltinType();
-//        $t = $toType->getClassName() ?? $toType->getBuiltinType();
-//        if ($f === null || $t === null) {
-//            return null;
-//        }
-//
-//        $converter = $this->valueConverters[$f][$t] ?? null;
-//        return $converter;
-//    }
 }
