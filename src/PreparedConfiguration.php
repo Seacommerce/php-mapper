@@ -107,7 +107,7 @@ class PreparedConfiguration
             }
             if ($operation instanceof FromProperty) {
                 if (!isset($this->sourceProperties[$operation->getFrom()])) {
-                    throw new PropertyNotFoundException($property, array_keys($this->sourceProperties));
+                    throw new PropertyNotFoundException($operation->getFrom(), array_keys($this->sourceProperties));
                 }
 
                 if (!$this->sourceProperties[$operation->getFrom()]->isReadable()) {

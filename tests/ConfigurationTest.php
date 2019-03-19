@@ -170,4 +170,19 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
             ->prepare()
             ->validate();
     }
+
+    /**
+     * @throws \Exception
+     */
+    public function testMapFromInvalidPropertyShouldThrowValidationException()
+    {
+        $this->expectException(PropertyNotFoundException::class);
+        $this->expectExceptionMessageRegExp("/Property 'nonexitingproperty' does not exist./");
+
+        (new Configuration(Model\PublicFields\Source::class, Model\PublicFields\Target::class, 'X'))
+            ->autoMap()
+            ->forMember('name', Operation::fromProperty('nonexitingproperty'))
+            ->prepare()
+            ->validate();
+    }
 }
