@@ -70,7 +70,7 @@ You might be wondering why this library exists since there are already (at least
 Although all of these libraries have their own strengths and features, none of them provide the features that I like to see in a mapper which are mainly validation and compilation (= performance).
 
 ### Validation
-Automatically mapping properties between objects removes a lot of manual work but does not make the process less prone to human errors. Typically, automappers map properties on a "best-effort" basis by only automatically mapping properties that exists on both sides. Non-matching properties on either side still need some manual configuration of will otherwise be simply ignored.
+Automatically mapping properties between objects removes a lot of manual work but does not make the process less prone to human errors. Typically, automappers map properties on a "best-effort" basis by only automatically mapping properties that exists on both sides. Non-matching properties on either side still need some manual configuration or will otherwise be simply ignored.
 
 PHP does not have a language construct to point to classes and member names (like ``` nameof``` in C#) and therefore, configuring a mapping manually usualy involves refering to properties using their name in a string value. E.g.
 
@@ -111,11 +111,10 @@ kinda defeats the purpose of an auto mapper library).
 Pro's
 - Compiled.
 - Highly configurable.
-- No validation.
-- Not very actively maintained.
 - Plays well with Symphony (bundle included).
 
 Con's
+- Not very actively maintained.
 - No way to validate the mapping.
 
 ### idr0id/papper
