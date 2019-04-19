@@ -1,6 +1,7 @@
 <?php
 
 namespace Seacommerce\Mapper;
+
 class Configuration implements ConfigurationInterface
 {
     /** @var RegistryInterface */

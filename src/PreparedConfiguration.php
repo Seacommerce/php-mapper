@@ -4,6 +4,7 @@
 namespace Seacommerce\Mapper;
 
 
+use Seacommerce\Mapper\Exception\ClassNotFoundException;
 use Seacommerce\Mapper\Exception\PropertyNotFoundException;
 use Seacommerce\Mapper\Exception\ValidationErrorsException;
 use Seacommerce\Mapper\Extractor\DefaultPropertyExtractor;
@@ -86,6 +87,7 @@ class PreparedConfiguration
      * @return ValidationErrorsException
      * @throws ValidationErrorsException
      * @throws PropertyNotFoundException
+     * @throws ClassNotFoundException
      */
     public function validate(bool $throw = true): ?ValidationErrorsException
     {
@@ -112,6 +114,32 @@ class PreparedConfiguration
 
                 if (!$this->sourceProperties[$operation->getFrom()]->isReadable()) {
                     $errors[] = "Source property '{$operation->getFrom()}' is not readable. Either declare a getter/hasser/isser or make the property public.";
+                }
+            }
+        }
+
+        foreach ($this->sourceProperties as $property) {
+            if(!$property->getTypes()) {
+                continue;
+            }
+            foreach ($property->getTypes() as $type) {
+                if ($type->getClassName()) {
+                    if(!class_exists($type->getClassName()) && !interface_exists($type->getClassName())) {
+                        throw new ClassNotFoundException($type->getClassName());
+                    }
+                }
+            }
+        }
+
+        foreach ($this->targetProperties as $property) {
+            if(!$property->getTypes()) {
+                continue;
+            }
+            foreach ($property->getTypes() as $type) {
+                if ($type->getClassName()) {
+                    if(!class_exists($type->getClassName()) && !interface_exists($type->getClassName())) {
+                        throw new ClassNotFoundException($type->getClassName());
+                    }
                 }
             }
         }
