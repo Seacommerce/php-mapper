@@ -3,14 +3,17 @@ declare(strict_types=1);
 
 namespace Seacommerce\Mapper\Test;
 
+use Exception;
+use PHPUnit\Framework\TestCase;
 use Seacommerce\Mapper\Configuration;
+use Seacommerce\Mapper\Exception\ClassNotFoundException;
 use Seacommerce\Mapper\Exception\PropertyNotFoundException;
 use Seacommerce\Mapper\Exception\ValidationErrorsException;
 use Seacommerce\Mapper\Operation;
 use Seacommerce\Mapper\PreparedConfiguration;
 use Seacommerce\Mapper\Registry;
 
-class ConfigurationTest extends \PHPUnit\Framework\TestCase
+class ConfigurationTest extends TestCase
 {
     /**
      *
@@ -49,10 +52,6 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
         $this->assertEmpty($errors);
     }
 
-    /**
-     * @throws PropertyNotFoundException
-     * @throws ValidationErrorsException
-     */
     public function testEmptyConfiguration()
     {
         $this->expectException(ValidationErrorsException::class);
@@ -96,7 +95,7 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testIgnorePropertyNotFound()
     {
@@ -108,7 +107,7 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testMapSourcePropertyNotFound()
     {
@@ -120,7 +119,7 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testMapTargetPropertyNotFound()
     {
@@ -131,10 +130,6 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
             ->validate();
     }
 
-    /**
-     * @throws PropertyNotFoundException
-     * @throws ValidationErrorsException
-     */
     public function testPropertyLessSourceClassShouldThrowException()
     {
         $this->expectException(ValidationErrorsException::class);
@@ -143,10 +138,6 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
             ->validate();
     }
 
-    /**
-     * @throws PropertyNotFoundException
-     * @throws ValidationErrorsException
-     */
     public function testPropertyLessTargetClassShouldThrowException()
     {
         (new Configuration(Model\GettersSetters\Source::class, Model\None\Target::class, 'X'))
@@ -155,9 +146,7 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue(true);
     }
 
-    /**
-     * @throws \Exception
-     */
+
     public function testMapFromReadOnlyOrMapFromWriteOnlyShouldThrowValidationException()
     {
         $this->expectException(ValidationErrorsException::class);
@@ -171,9 +160,6 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
             ->validate();
     }
 
-    /**
-     * @throws \Exception
-     */
     public function testMapFromInvalidPropertyShouldThrowValidationException()
     {
         $this->expectException(PropertyNotFoundException::class);
@@ -196,5 +182,15 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
                 ->prepare();
         $prepared->validate();
         $this->assertTrue(true);
+    }
+
+    public function testMapFromPropertyWithInvalidTypeShouldThrowException()
+    {
+        $this->expectException(ClassNotFoundException::class);
+
+        (new Configuration(Model\NonExistingPropertyTypes\Source::class, Model\NonExistingPropertyTypes\Target::class, 'X'))
+            ->autoMap()
+            ->prepare()
+            ->validate();
     }
 }
