@@ -12,15 +12,21 @@ use Seacommerce\Mapper\Compiler\CachedLoader;
 use Seacommerce\Mapper\Compiler\NativeCompiler;
 use Seacommerce\Mapper\ConfigurationInterface;
 use Seacommerce\Mapper\Context;
+use Seacommerce\Mapper\Events\PostResolveEvent;
+use Seacommerce\Mapper\Events\PreResolveEvent;
 use Seacommerce\Mapper\Exception\ClassNotFoundException;
 use Seacommerce\Mapper\Exception\ConfigurationNotFoundException;
 use Seacommerce\Mapper\Exception\InvalidArgumentException;
 use Seacommerce\Mapper\Mapper;
+use Seacommerce\Mapper\MapperEvents;
 use Seacommerce\Mapper\MapperInterface;
 use Seacommerce\Mapper\Operation;
 use Seacommerce\Mapper\Registry;
+use Seacommerce\Mapper\Test\Model\GettersSetters\Source;
+use Seacommerce\Mapper\Test\Model\GettersSetters\Target;
 use Seacommerce\Mapper\ValueConverter\DateTimeConverter;
 use Seacommerce\Mapper\ValueConverter\DateTimeImmutableConverter;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Filesystem\Filesystem;
 
 class MapperTest extends \PHPUnit\Framework\TestCase
@@ -284,5 +290,45 @@ class MapperTest extends \PHPUnit\Framework\TestCase
         $this->assertNotNull($target);
         $this->assertSame(1, $target->getId());
         $this->assertSame('after', $target->getName());
+    }
+
+    public function testPreResolveEvent()
+    {
+        $this->expectException(ConfigurationNotFoundException::class);
+        $this->expectExceptionMessage("Configuration for mapping from 'NonExistingSource' to 'NonExistingTarget' could not be found.");
+
+        $registry = new Registry(__FUNCTION__);
+        $mapper = new Mapper($registry, new CachedLoader(new NativeCompiler(), self::$cacheDir));
+        $eventDispatcher = new EventDispatcher();
+        $eventDispatcher->addListener(MapperEvents::PRE_RESOLVE, function (PreResolveEvent $event) {
+            $this->assertInstanceOf(Model\GettersSetters\Source::class, $event->getSource());
+            $this->assertEquals(Model\GettersSetters\Target::class, $event->getTarget());
+            $this->assertNull($event->getSourceClass());
+            $this->assertNull($event->getTargetClass());
+
+            $event->setSourceClass('NonExistingSource');
+            $event->setTargetClass('NonExistingTarget');
+        });
+        $mapper->setEventDispatcher($eventDispatcher);
+        $mapper->map(new Model\GettersSetters\Source(), Model\GettersSetters\Target::class);
+    }
+
+    public function testPostResolveEvent()
+    {
+        $this->expectException(ConfigurationNotFoundException::class);
+        $this->expectExceptionMessage("Configuration for mapping from 'NonExistingSource' to 'NonExistingTarget' could not be found.");
+
+        $registry = new Registry(__FUNCTION__);
+        $mapper = new Mapper($registry, new CachedLoader(new NativeCompiler(), self::$cacheDir));
+        $eventDispatcher = new EventDispatcher();
+        $eventDispatcher->addListener(MapperEvents::POST_RESOLVE, function (PostResolveEvent $event) {
+            $this->assertEquals(Model\GettersSetters\Source::class, $event->getSourceClass());
+            $this->assertEquals(Model\GettersSetters\Target::class, $event->getTargetClass());
+
+            $event->setSourceClass('NonExistingSource');
+            $event->setTargetClass('NonExistingTarget');
+        });
+        $mapper->setEventDispatcher($eventDispatcher);
+        $mapper->map(new Model\GettersSetters\Source(), Model\GettersSetters\Target::class);
     }
 }
