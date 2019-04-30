@@ -3,11 +3,13 @@
 namespace Seacommerce\Mapper;
 
 use Seacommerce\Mapper\Compiler\LoaderInterface;
+use Seacommerce\Mapper\Events\PostResolveEvent;
+use Seacommerce\Mapper\Events\PreResolveEvent;
 use Seacommerce\Mapper\Exception\ClassNotFoundException;
 use Seacommerce\Mapper\Exception\ConfigurationNotFoundException;
 use Seacommerce\Mapper\Exception\InvalidArgumentException;
-use Seacommerce\Mapper\Exception\PropertyNotFoundException;
-use Seacommerce\Mapper\Extractor\DefaultPropertyExtractor;
+use Symfony\Component\EventDispatcher\Event;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class Mapper implements MapperInterface
 {
@@ -15,14 +17,15 @@ class Mapper implements MapperInterface
     private $registry;
     /*** @var LoaderInterface */
     private $loader;
+    /** @var EventDispatcher */
+    private $eventDispatcher = null;
 
     /**
      * Mapper constructor.
      * @param RegistryInterface $registry
      * @param LoaderInterface $loader
      */
-    public function __construct(RegistryInterface $registry,
-                                LoaderInterface $loader)
+    public function __construct(RegistryInterface $registry, LoaderInterface $loader)
     {
         $this->registry = $registry;
         $this->loader = $loader;
@@ -34,6 +37,24 @@ class Mapper implements MapperInterface
     public function getRegistry(): RegistryInterface
     {
         return $this->registry;
+    }
+
+    /**
+     * @return null
+     */
+    public function getEventDispatcher()
+    {
+        return $this->eventDispatcher;
+    }
+
+    /**
+     * @param null $eventDispatcher
+     * @return Mapper
+     */
+    public function setEventDispatcher($eventDispatcher): self
+    {
+        $this->eventDispatcher = $eventDispatcher;
+        return $this;
     }
 
     /**
@@ -58,8 +79,8 @@ class Mapper implements MapperInterface
         if ($source === null) {
             return null;
         }
-        $sourceClass = $this->validateSource($source);
-        $targetClass = $this->validateTarget($target);
+
+        list($sourceClass, $targetClass) = $this->resolve($source, $target);
 
         if (is_string($target)) {
             $target = new $target;
@@ -110,10 +131,28 @@ class Mapper implements MapperInterface
     }
 
     /**
+     * @param $source
+     * @param $target
+     * @return array
+     * @throws ClassNotFoundException
+     */
+    private function resolve($source, $target)
+    {
+        $preEvent = new PreResolveEvent($source, $target);
+        $this->dispatch(MapperEvents::PRE_RESOLVE, $preEvent);
+
+        $sourceClass = $preEvent->getSourceClass() ?? $this->resolveSource($source);
+        $targetClass = $preEvent->getTargetClass() ?? $this->resolveTarget($target);
+        $postEvent = new PostResolveEvent($sourceClass, $targetClass);
+        $this->dispatch(MapperEvents::POST_RESOLVE, $postEvent);
+        return [$postEvent->getSourceClass(), $postEvent->getTargetClass()];
+    }
+
+    /**
      * @param string|object|array $source
      * @return string
      */
-    private function validateSource($source)
+    private function resolveSource($source)
     {
         if (is_array($source)) {
             return 'array';
@@ -121,7 +160,7 @@ class Mapper implements MapperInterface
             if (is_object($source)) {
                 return get_class($source);
             }
-        throw new InvalidArgumentException($source, "Expected an object, an array or an existing class name.");
+        throw new InvalidArgumentException($source, "Expected an object or an array.");
     }
 
     /**
@@ -129,7 +168,7 @@ class Mapper implements MapperInterface
      * @return string
      * @throws ClassNotFoundException
      */
-    private function validateTarget($source)
+    private function resolveTarget($source)
     {
         if (is_string($source)) {
             if ($source === 'array') {
@@ -144,5 +183,13 @@ class Mapper implements MapperInterface
                 return get_class($source);
             }
         throw new InvalidArgumentException($source, "Expected an object, an existing class name or 'array'.");
+    }
+
+    private function dispatch(string $name, Event $event)
+    {
+        if ($this->eventDispatcher === null) {
+            return;
+        }
+        $this->eventDispatcher->dispatch($name, $event);
     }
 }
