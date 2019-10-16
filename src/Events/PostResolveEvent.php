@@ -3,8 +3,8 @@
 
 namespace Seacommerce\Mapper\Events;
 
+use Symfony\Contracts\EventDispatcher\Event;
 
-use Symfony\Component\EventDispatcher\Event;
 
 class PostResolveEvent extends Event
 {

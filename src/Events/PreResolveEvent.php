@@ -3,8 +3,7 @@
 
 namespace Seacommerce\Mapper\Events;
 
-
-use Symfony\Component\EventDispatcher\Event;
+use Symfony\Contracts\EventDispatcher\Event;
 
 class PreResolveEvent extends Event
 {

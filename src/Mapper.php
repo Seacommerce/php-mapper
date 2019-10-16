@@ -8,7 +8,7 @@ use Seacommerce\Mapper\Events\PreResolveEvent;
 use Seacommerce\Mapper\Exception\ClassNotFoundException;
 use Seacommerce\Mapper\Exception\ConfigurationNotFoundException;
 use Seacommerce\Mapper\Exception\InvalidArgumentException;
-use Symfony\Component\EventDispatcher\Event;
+use Symfony\Contracts\EventDispatcher\Event;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class Mapper implements MapperInterface
@@ -190,6 +190,6 @@ class Mapper implements MapperInterface
         if ($this->eventDispatcher === null) {
             return;
         }
-        $this->eventDispatcher->dispatch($name, $event);
+        $this->eventDispatcher->dispatch($event,$name);
     }
 }
